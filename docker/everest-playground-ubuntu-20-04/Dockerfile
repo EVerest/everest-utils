@@ -13,11 +13,14 @@ RUN ln -snf /usr/share/zoneinfo/$TIMEZONE /etc/localtime && echo $TIMEZONE > /et
 RUN useradd -ms /bin/bash -u ${USER_UID} -U ${USERNAME}
 
 RUN apt-get update \
-    && apt-get install -y sudo \
+    && apt-get install --no-install-recommends -y sudo \
     && echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME} \
-    && chmod 0440 /etc/sudoers.d/${USERNAME}
+    && chmod 0440 /etc/sudoers.d/${USERNAME} \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get install -y \
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
     git \
     rsync \
     wget \
@@ -32,7 +35,10 @@ RUN apt-get install -y \
     openjdk-11-jdk \
     libsqlite3-dev \
     python3-pip \
-    libssl-dev
+    libssl-dev \
+    gpg \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # install a modern version of Node.js
 ENV NODE_VERSION=node_16.x
@@ -42,8 +48,10 @@ RUN gpg --no-default-keyring --keyring "${KEYRING}" --list-keys 9FD3B784BC1C6FC3
 RUN echo "deb [signed-by=${KEYRING}] https://deb.nodesource.com/${NODE_VERSION} focal main" | tee /etc/apt/sources.list.d/nodesource.list
 RUN echo "deb-src [signed-by=${KEYRING}] https://deb.nodesource.com/${NODE_VERSION} focal main" | tee -a /etc/apt/sources.list.d/nodesource.list
 RUN apt-get update \
-    && apt-get install -y \
-    nodejs
+    && apt-get install --no-install-recommends -y \
+    nodejs \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # create workdir and set access rights
 WORKDIR /workspace/everest-cpp
