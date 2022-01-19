@@ -9,11 +9,14 @@ ARG USER_UID=1000
 RUN useradd -ms /bin/bash -u ${USER_UID} -U ${USERNAME}
 
 RUN apt-get update \
-    && apt-get install -y sudo \
+    && apt-get install --no-install-recommends -y sudo \
     && echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME} \
-    && chmod 0440 /etc/sudoers.d/${USERNAME}
+    && chmod 0440 /etc/sudoers.d/${USERNAME} \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get install -y \
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
     git \
     rsync \
     wget \
@@ -30,7 +33,9 @@ RUN apt-get install -y \
     npm \
     libsqlite3-dev \
     python3-pip \
-    libssl-dev
+    libssl-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # create workdir and set access rights
 WORKDIR /workspace/everest-cpp
