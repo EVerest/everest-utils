@@ -45,4 +45,7 @@ RUN ssh-keyscan github.com > ~/.ssh/known_hosts
 ENV PATH="/home/$USERNAME/.local/bin:$PATH"
 ENV CPM_SOURCE_CACHE="/home/$USERNAME/cpm_source_cache"
 
+RUN echo "echo \"To initialize the EVerest workspace please run the following command:\"" >> /home/${USERNAME}/.bashrc
+RUN echo "echo \". init.sh\"" >> /home/${USERNAME}/.bashrc
+
 CMD [ "bash" ]
