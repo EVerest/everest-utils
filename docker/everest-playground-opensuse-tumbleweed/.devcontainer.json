@@ -1,5 +1,5 @@
 {
-  "name": "everest playground",
+  "name": "EVerest playground openSUSE Tumbleweed",
   "build": {
     "dockerfile": "Dockerfile"
   },
