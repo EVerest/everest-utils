@@ -42,4 +42,7 @@ USER ${USERNAME}
 RUN mkdir ~/.ssh
 RUN ssh-keyscan github.com > ~/.ssh/known_hosts
 
+ENV PATH="/home/$USERNAME/.local/bin:$PATH"
+ENV CPM_SOURCE_CACHE="/home/$USERNAME/cpm_source_cache"
+
 CMD [ "bash" ]

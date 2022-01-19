@@ -10,12 +10,7 @@ if [ -d "everest-dev-environment" ] ; then
 else
     git clone git@github.com:EVerest/everest-dev-environment.git || { echo "Could not clone everest-dev-environment. Did you add your SSH key on GitHub and made it available to ssh-agent?"; return; }
 fi
-PROFILE_PATH="$HOME/.profile"
-CPM_SOURCE_CACHE_VAR="export CPM_SOURCE_CACHE=\$HOME/cache"
-grep -qF -- "$CPM_SOURCE_CACHE_VAR" "$PROFILE_PATH" || echo "$CPM_SOURCE_CACHE_VAR" >> "$PROFILE_PATH"
 (cd everest-dev-environment/dependency_manager && python3 -m pip install .)
-echo "Sourcing '$PROFILE_PATH'"
-. "$PROFILE_PATH"
 edm --register-cmake-module
 edm --config everest-dev-environment/everest-complete.yaml --workspace .
 edm --update
