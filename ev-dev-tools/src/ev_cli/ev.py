@@ -147,7 +147,7 @@ def construct_impl_file_paths(impl):
 
 
 def set_impl_specific_path_vars(tmpl_data, output_path):
-    """Set cpp_file_rel_path and class_header vars to implementation template data"""
+    """Set cpp_file_rel_path and class_header vars to implementation template data."""
     for impl in tmpl_data['provides']:
         (impl['class_header'], impl['cpp_file_rel_path']) = construct_impl_file_paths(impl)
 
@@ -473,8 +473,7 @@ def module_update(args):
 
 
 def module_genld(args):
-    output_dir = Path(args.output_dir).resolve() if args.output_dir else everest_dir / \
-        f'build/generated/modules'
+    output_dir = Path(args.output_dir).resolve() if args.output_dir else everest_dir / 'build/generated/modules'
 
     loader_files = generate_module_loader_files(args.module, output_dir)
 
