@@ -273,7 +273,7 @@ def generate_module_files(mod, update_flag):
         (impl_hpp_file, impl_cpp_file) = construct_impl_file_paths(impl)
 
         # load template data for interface
-        if_def, last_mtime = load_interface_defintion(interface)
+        if_def, last_mtime = load_interface_definition(interface)
 
         if_tmpl_data = generate_tmpl_data_for_if(interface, if_def)
 
@@ -342,7 +342,7 @@ def generate_module_files(mod, update_flag):
     return mod_files
 
 
-def load_interface_defintion(interface):
+def load_interface_definition(interface):
     if_path = everest_dir / f'interfaces/{interface}.json'
 
     if_def = helpers.load_validated_interface_def(if_path, validators['interface'])
@@ -361,7 +361,7 @@ def generate_interface_headers(interface, all_interfaces_flag, output_dir):
     if_parts = {'base': None, 'exports': None}
 
     try:
-        if_def, last_mtime = load_interface_defintion(interface)
+        if_def, last_mtime = load_interface_definition(interface)
     except Exception as e:
         if not all_interfaces_flag:
             raise
