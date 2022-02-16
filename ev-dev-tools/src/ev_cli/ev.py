@@ -25,6 +25,7 @@ everest_dir = None
 env = j2.Environment(loader=j2.FileSystemLoader(Path(__file__).parent / 'templates'),
                      lstrip_blocks=True, trim_blocks=True, undefined=j2.StrictUndefined,
                      keep_trailing_newline=True)
+env.filters['snake_case'] = helpers.snake_case
 
 templates = {
     'interface_base': env.get_template('interface-Base.hpp.j2'),
@@ -47,7 +48,6 @@ def setup_jinja_env():
     env.globals['timestamp'] = datetime.utcnow()
     # FIXME (aw): which repo to use? everest or everest-framework?
     env.globals['git'] = helpers.gather_git_info(everest_dir)
-    env.filters['snake_case'] = helpers.snake_case
     env.filters['create_dummy_result'] = helpers.create_dummy_result
 
 
