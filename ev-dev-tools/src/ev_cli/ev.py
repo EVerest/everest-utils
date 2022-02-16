@@ -550,7 +550,7 @@ def main():
     mod_genld_parser.add_argument(
         'module', type=str, help='name of the module, for which the loader should be generated')
     mod_genld_parser.add_argument('-o', '--output-dir', type=str, help='Output directory for generated loader '
-                                  'files (default: {everest-dir}/build/generated/module/)')
+                                  'files (default: {everest-dir}/build/generated/modules)')
     mod_genld_parser.set_defaults(action_handler=module_genld)
 
     if_actions = parser_if.add_subparsers(metavar='<action>', help='available actions', required=True)
