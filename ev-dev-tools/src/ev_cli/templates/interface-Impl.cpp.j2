@@ -15,7 +15,7 @@ void {{ info.class_name }}::ready() {
 }
 {% for cmd in cmds %}
 
-{{ handle_cmd_signature(cmd, info.class_name) }}{
+{{ handle_cmd_signature(cmd, info.class_name, '::'+info.interface) }}{
     // your code for cmd {{ cmd.name }} goes here
     {% if cmd.result %}
     return {{ cmd.result.json_type|create_dummy_result }};

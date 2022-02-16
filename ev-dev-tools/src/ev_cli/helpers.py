@@ -8,16 +8,25 @@ author: aw@pionix.de
 FIXME (aw): Module documentation.
 """
 
+from .type_parsing import TypeParser
+
 from pathlib import Path
 import shutil
 import subprocess
 import re
+from typing import Dict, List, Tuple
+import keyword
 
 import json
 import jstyleson
 import jsonschema
 
 from uuid import uuid4
+
+import stringcase
+
+
+everest_dir = None
 
 
 def snake_case(word: str) -> str:
@@ -162,10 +171,206 @@ def build_type_info(name, json_type):
     return ti
 
 
+parsed_types: List = []
+parsed_enums: List = []
+current_defs: Dict = {}
+
+format_types = dict()
+# format_types['date-time'] = 'DateTime'
+
+
+def object_exists(name: str) -> bool:
+    """Check if an object already exists."""
+    for el in parsed_types:
+        if el['name'] == name:
+            return True
+
+    return False
+
+
+def add_enum_type(name: str, enums: Tuple[str], description: str):
+    """Add enum type to parsed_types."""
+    for el in parsed_enums:
+        if el['name'] == name:
+            raise Exception('Warning: enum ' + name + ' already exists')
+    parsed_enums.append({
+        'name': name,
+        'enums': enums,
+        'description': description
+    })
+
+
+def parse_property(prop_name: str, prop: Dict, depends_on: List[str]) -> Tuple[str, dict]:
+    """Determine type of property and proceed with it.
+    In case it is a $ref, look it up in the TypeParser
+    Currently, the following property types are supported:
+    - string (and enum as a special case)
+    - integer
+    - number
+    - boolean
+    - array
+    - object (will be parsed recursivly)
+    """
+
+    prop_type = None
+    prop_info = {
+        'description': prop.get('description', 'TODO: description'),
+        'prop': prop,
+    }
+    if 'type' not in prop:
+        if '$ref' in prop:
+            if prop['$ref'] not in TypeParser.all_types:
+                raise Exception('$ref: ' + prop['$ref'] + f' is unknown.')
+            type_dict = TypeParser.all_types[prop['$ref']]
+            type_path = everest_dir / 'types' / type_dict['type_relative_path'] .with_suffix('.json')
+            if not type_path.exists():
+                raise Exception('$ref: ' + prop['$ref'] + f' referenced type file "{type_path} does not exist.')
+
+            prop_type = type_dict['namespaced_type']
+            prop_info['prop']['type'] = prop_type
+            prop_info['type_dict'] = type_dict
+
+            return (prop_type, prop_info)
+        else:
+            # if not defined, propably any
+            return ('any', None)
+
+    if prop['type'] == 'string':
+        if 'enum' in prop:
+            prop_type = stringcase.capitalcase(prop_name)
+            add_enum_type(prop_type, prop['enum'], prop_info['description'])
+        elif 'format' in prop:
+            if prop['format'] in format_types:
+                prop_type = format_types[prop['format']]
+            else:
+                # unsupported format type
+                prop_type = 'std::string'
+                prop_info['unsupported_format'] = True
+        else:
+            prop_type = 'std::string'
+    elif prop['type'] == 'integer':
+        prop_type = 'int32_t'
+    elif prop['type'] == 'number':
+        prop_type = 'float'
+    elif prop['type'] == 'boolean':
+        prop_type = 'bool'
+    elif prop['type'] == 'array':
+        prop_type = 'std::vector<' + parse_property(prop_name, prop['items'], depends_on)[0] + '>'
+    elif prop['type'] == 'object':
+        prop_type = stringcase.capitalcase(prop_name)
+        depends_on.append(prop_type)
+        if not object_exists(prop_type):
+            parse_object(prop_type, prop)
+    else:
+        raise Exception('Unknown type: ' + prop['type'])
+
+    return (prop_type, prop_info)
+
+
+def parse_object(ob_name: str, json_schema: Dict):
+    """Parse a JSON object.
+    Iterates over the properties of this object, parses their type
+    and puts these information into the global dict parsed_types.
+    """
+
+    ob_dict = {'name': ob_name, 'properties': [], 'depends_on': []}
+    parsed_types.insert(0, ob_dict)
+
+    if 'properties' not in json_schema:
+        # object has no properties, probably not a complex object
+        return
+
+    for prop_name, prop in json_schema['properties'].items():
+        if not prop_name.isidentifier() or keyword.iskeyword(prop_name):
+            raise Exception(prop_name + ' can\'t be used as an identifier!')
+        (prop_type, prop_info) = parse_property(prop_name, prop, ob_dict['depends_on'])
+        ob_dict['properties'].append({
+            'name': prop_name,
+            'json_name': prop_name,
+            'type': prop_type,
+            'info': prop_info,
+            'enum': 'enum' in prop,
+            'required': prop_name in json_schema.get('required', {}),
+        })
+
+    ob_dict['properties'].sort(key=lambda x: x.get('required'), reverse=True)
+
+    return ob_dict
+
+
+def extended_build_type_info(name: str, info: dict) -> Tuple[dict, dict]:
+    """Extend build_type_info with enum and object type handling."""
+    type_info = build_type_info(name, info['type'])
+    enum_info = None
+
+    if type_info['json_type'] == 'string':
+        if 'enum' in info:
+            enum_info = {
+                'name': name,
+                'description': info.get('description', 'TODO: description'),
+                'enum_type': stringcase.capitalcase(name),
+                'enum': info['enum']
+            }
+
+            type_info['enum_type'] = enum_info['enum_type']
+    elif type_info['json_type'] == 'object':
+        ob = parse_object(name, info)
+        if ob and 'name' in ob:
+            type_info['object_type'] = stringcase.capitalcase(ob['name'])
+
+    return (type_info, enum_info)
+
+
+def rename_duplicates(lst: List, duplicates: dict, text=''):
+    """Rename duplicates in the provided list."""
+    for index, element in enumerate(lst):
+        name = element['name']
+        if name not in duplicates:
+            duplicates[name] = [index, 0]
+        else:
+            duplicates[name][1] += 1
+            new_name = element['name'] + text
+            if duplicates[name][1] > 1:
+                new_name += str(duplicates[name][1])
+            lst[index]['original_name'] = lst[index]['name']
+            lst[index]['name'] = new_name
+            if text == 'Enum':
+                lst[index]['enum_type'] = stringcase.capitalcase(new_name)
+
+
+def rename_cmd_args_and_results(cmds: List, enums: List, types: List):
+    """Rename cmd arguments or results types where their name changed by duplicate renaming."""
+    for index, cmd in enumerate(cmds):
+        for arg_index, arg in enumerate(cmd['args']):
+            if 'enum_type' in arg:
+                for enum in enums:
+                    if 'original_name' in enum:
+                        if enum['original_name'] == arg['enum_type']:
+                            cmds[index]['args'][arg_index]['enum_type'] = enum['name']
+            elif 'object_type' in arg:
+                for cpp_type in types:
+                    if 'original_name' in cpp_type:
+                        if enum['original_name'] == arg['object_type']:
+                            cmds[index]['args'][arg_index]['object_type'] = cpp_type['name']
+        if cmd['result']:
+            if 'enum_type' in cmd['result']:
+                for enum in enums:
+                    if 'original_name' in enum:
+                        if enum['original_name'] == cmd['result']['enum_type']:
+                            cmds[index]['result']['enum_type'] = enum['name']
+            elif 'object_type' in cmd['result']:
+                for cpp_type in types:
+                    if 'original_name' in cpp_type:
+                        if cpp_type['original_name'] == cmd['result']['object_type']:
+                            cmds[index]['result']['object_type'] = cpp_type['name']
+
+
 def load_validators(schema_path):
     # FIXME (aw): we should also patch the schemas like in everest-framework
     validators = {}
-    for validator, filename in zip(['interface', 'module', 'config'], ['interface', 'manifest', 'config']):
+    for validator, filename in zip(
+        ['interface', 'module', 'config', 'type'],
+        ['interface', 'manifest', 'config', 'type']):
         try:
             schema = jstyleson.loads((schema_path / f'{filename}.json').read_text())
             jsonschema.Draft7Validator.check_schema(schema)
@@ -208,6 +413,23 @@ def load_validated_interface_def(if_def_path, validator):
         raise Exception(f'Could not parse json from interface definition file {if_def_path}') from err
 
     return if_def
+
+
+def load_validated_type_def(type_def_path, validator):
+    """Load a type definition from the provided path and validate it with the provided validator."""
+    type_def = {}
+    try:
+        type_def = jstyleson.loads(type_def_path.read_text())
+        # validating type definition
+        validator.validate(type_def)
+    except OSError as err:
+        raise Exception(f'Could not open type definition file {err.filename}: {err.strerror}') from err
+    except jsonschema.ValidationError as err:
+        raise Exception(f'Validation error in type definition file {type_def_path}') from err
+    except json.JSONDecodeError as err:
+        raise Exception(f'Could not parse json from type definition file {type_def_path}') from err
+
+    return type_def
 
 
 def load_validated_module_def(module_path, validator):
