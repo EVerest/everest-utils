@@ -1,6 +1,6 @@
 {% from "helper_macros.j2" import print_template_info, var_to_cpp, print_spdx_line %}
 {{ print_spdx_line('Apache-2.0') }}
-{{ print_template_info('3') }}
+{{ print_template_info('4') }}
 
 #include "{{ info.ld_ev_header }}"
 
@@ -10,6 +10,7 @@
 {% endfor %}
 
 #include <boost/dll/alias.hpp>
+#include <framework/runtime.hpp>
 #include <utils/types.hpp>
 
 namespace module {
@@ -150,3 +151,12 @@ BOOST_DLL_ALIAS(module::register_subscribe_handler, everest_register_subscribe_v
 BOOST_DLL_ALIAS(module::register_ext_mqtt_publish_handler, everest_register_external_mqtt_publish_callback)
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,performance-no-int-to-ptr,cppcoreguidelines-avoid-non-const-global-variables)
 BOOST_DLL_ALIAS(module::register_ext_mqtt_subscribe_handler, everest_register_external_mqtt_handler_callback)
+
+int main(int argc, char* argv[]) {
+    auto module_loader = Everest::ModuleLoader(argc, argv, Everest::ModuleCallbacks(
+            module::register_call_handler, module::register_publish_handler, module::register_subscribe_handler,
+            module::register_ext_mqtt_publish_handler, module::register_ext_mqtt_subscribe_handler,
+            module::everest_register, module::LdEverest::init, module::LdEverest::ready));
+
+    return module_loader.initialize();
+}
