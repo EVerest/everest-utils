@@ -9,7 +9,6 @@
 #include "{{ impl.class_header }}"
 {% endfor %}
 
-#include <boost/dll/alias.hpp>
 #include <framework/runtime.hpp>
 #include <utils/types.hpp>
 
@@ -134,23 +133,6 @@ std::vector<Everest::cmd> everest_register(const json& connections) {
 }
 
 } // namespace module
-
-// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,performance-no-int-to-ptr,cppcoreguidelines-avoid-non-const-global-variables)
-BOOST_DLL_ALIAS(module::LdEverest::init, init)
-// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,performance-no-int-to-ptr,cppcoreguidelines-avoid-non-const-global-variables)
-BOOST_DLL_ALIAS(module::LdEverest::ready, ready)
-// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,performance-no-int-to-ptr,cppcoreguidelines-avoid-non-const-global-variables)
-BOOST_DLL_ALIAS(module::everest_register, everest_register)
-// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,performance-no-int-to-ptr,cppcoreguidelines-avoid-non-const-global-variables)
-BOOST_DLL_ALIAS(module::register_call_handler, everest_register_call_cmd_callback)
-// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,performance-no-int-to-ptr,cppcoreguidelines-avoid-non-const-global-variables)
-BOOST_DLL_ALIAS(module::register_publish_handler, everest_register_publish_var_callback)
-// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,performance-no-int-to-ptr,cppcoreguidelines-avoid-non-const-global-variables)
-BOOST_DLL_ALIAS(module::register_subscribe_handler, everest_register_subscribe_var_callback)
-// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,performance-no-int-to-ptr,cppcoreguidelines-avoid-non-const-global-variables)
-BOOST_DLL_ALIAS(module::register_ext_mqtt_publish_handler, everest_register_external_mqtt_publish_callback)
-// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,performance-no-int-to-ptr,cppcoreguidelines-avoid-non-const-global-variables)
-BOOST_DLL_ALIAS(module::register_ext_mqtt_subscribe_handler, everest_register_external_mqtt_handler_callback)
 
 int main(int argc, char* argv[]) {
     auto module_loader = Everest::ModuleLoader(argc, argv, Everest::ModuleCallbacks(
