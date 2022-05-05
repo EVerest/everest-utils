@@ -2,3 +2,4 @@
 !.gitignore
 !README.md
 !init.sh
+!init-readonly.sh
