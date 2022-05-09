@@ -9,16 +9,18 @@ if [ -d "everest-dev-environment" ] ; then
     echo "Directory 'everest-dev-environment' already exists, trying to update its contents..."
     (cd everest-dev-environment && git pull)
 else
-    GIT_CLONE_OUTPUT=$(git clone git@github.com:EVerest/everest-dev-environment.git 2>&1)
-    GIT_CLONE_RETVAL=$?
-    if [ $GIT_CLONE_RETVAL -ne 0 ] ; then
-        case "${GIT_CLONE_OUTPUT}" in
-            *"Permission denied (publickey)"* ) echo "Could not clone everest-dev-environment with git protocol."; echo "Did you add your SSH key on GitHub and made it available to ssh-agent?"; echo "Trying to continue with https protocol."; GIT_PROTOCOL="https";;
-            * ) echo "Unknown git error: ${GIT_CLONE_OUTPUT}";;
-        esac
+    ssh -T git@github.com
+    SSH_TEST_RETVAL=$?
+    if [ $SSH_TEST_RETVAL -ne 1 ] ; then
+        echo "Could not clone everest-dev-environment with git protocol."
+        echo "Did you add your SSH key on GitHub and made it available to ssh-agent?"
+        echo "Trying to continue with https protocol."
+        GIT_PROTOCOL="https"
     fi
     if [ "${GIT_PROTOCOL}" = "https" ] ; then
-        git clone https://github.com/EVerest/everest-dev-environment.git || { echo "Could not clone everest-dev-environment. Did you add your SSH key on GitHub and made it available to ssh-agent?"; return; }
+        git clone https://github.com/EVerest/everest-dev-environment.git || { echo "Could not clone everest-dev-environment."; return; }
+    else
+        git clone git@github.com:EVerest/everest-dev-environment.git
     fi
 fi
 (cd everest-dev-environment/dependency_manager && python3 -m pip install .)
