@@ -1,0 +1,39 @@
+{
+  "name": "EVerest cross compiler",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "containerEnv": {
+    "MQTT_SERVER_ADDRESS": "mqtt-server",
+    "MQTT_SERVER_PORT": "1883"
+  },
+  "extensions": [
+    "ms-python.python",
+    "ms-vscode.cpptools",
+    "twxs.cmake",
+    "ms-vscode.cmake-tools"
+  ],
+  "postCreateCommand": "",
+  "remoteUser": "docker",
+  "runArgs": [
+    "--network=infranet_network",
+    "--cap-add=ALL",
+    "--privileged"
+  ],
+  "mounts": [
+    "source=/dev,target=/dev,type=bind,consistency=cached",
+    "source=/lib/modules,target=/lib/modules,type=bind,consistency=cached"
+  ],
+  "postStartCommand": "sudo mount binfmt_misc -t binfmt_misc /proc/sys/fs/binfmt_misc",
+  "workspaceFolder": "/workspace/everest-cpp",
+  "workspaceMount": "source=${localWorkspaceFolder}/../../,target=/workspace,type=bind",
+  "settings": {
+    "terminal.integrated.profiles.linux": {
+      "bash": {
+        "path": "/bin/bash"
+      }
+    },
+    "terminal.integrated.defaultProfile.linux": "bash",
+    "python.pythonPath": "/usr/bin/python3"
+  }
+}
