@@ -13,6 +13,11 @@ At least on OpenSUSE Tumbleweed some of these packages are not available, here y
 docker run --privileged --rm tonistiigi/binfmt --install arm
 ```
 
+For 64 bit support:
+```bash
+docker run --privileged --rm tonistiigi/binfmt --install arm64
+```
+
 You can either use this dev container or use the docker container directly with the provided run.sh:
 ```bash
 ./run.sh

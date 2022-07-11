@@ -58,6 +58,9 @@ RUN apt-get update \
     gpg \
     pigz \
     openssh-client \
+    g++-aarch64-linux-gnu \
+    gcc-aarch64-linux-gnu \
+    binutils-aarch64-linux-gnu \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
