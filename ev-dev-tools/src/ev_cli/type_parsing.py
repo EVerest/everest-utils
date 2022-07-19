@@ -56,7 +56,7 @@ class TypeParser:
         for type_name, type_properties in type_def.get('types', {}).items():
             type_url = f'/{type_with_namespace["relative_path"]}#/{type_name}'
             TypeParser.all_types[type_url] = TypeParser.parse_type_url(type_url=type_url)
-            (_type_info, enum_info) = helpers.extended_build_type_info(type_name, type_properties)
+            (_type_info, enum_info) = helpers.extended_build_type_info(type_name, type_properties, type_file=True)
             if enum_info:
                 enums.append(enum_info)
 

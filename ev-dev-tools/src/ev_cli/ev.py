@@ -55,15 +55,16 @@ def setup_jinja_env():
     env.filters['create_dummy_result'] = helpers.create_dummy_result
 
 
-def generate_tmpl_data_for_if(interface, if_def):
+def generate_tmpl_data_for_if(interface, if_def, type_file):
     helpers.parsed_enums.clear()
     helpers.parsed_types.clear()
+    helpers.type_headers.clear()
     types = []
     enums = []
     vars = []
     for var, var_info in if_def.get('vars', {}).items():
-        (type_info, enum_info) = helpers.extended_build_type_info(var, var_info)
-        if enum_info:
+        (type_info, enum_info) = helpers.extended_build_type_info(var, var_info, type_file)
+        if enum_info and type_file:
             enums.append(enum_info)
 
         vars.append(type_info)
@@ -72,8 +73,8 @@ def generate_tmpl_data_for_if(interface, if_def):
     for cmd, cmd_info in if_def.get('cmds', {}).items():
         args = []
         for arg, arg_info in cmd_info.get('arguments', {}).items():
-            (type_info, enum_info) = helpers.extended_build_type_info(arg, arg_info)
-            if enum_info:
+            (type_info, enum_info) = helpers.extended_build_type_info(arg, arg_info, type_file)
+            if enum_info and type_file:
                 enums.append(enum_info)
 
             args.append(type_info)
@@ -82,32 +83,34 @@ def generate_tmpl_data_for_if(interface, if_def):
         if 'result' in cmd_info:
             result_info = cmd_info['result']
 
-            (result_type_info, enum_info) = helpers.extended_build_type_info('result', result_info)
+            (result_type_info, enum_info) = helpers.extended_build_type_info('result', result_info, type_file)
             if enum_info:
                 enums.append(enum_info)
 
         cmds.append({'name': cmd, 'args': args, 'result': result_type_info})
 
-    for parsed_enum in helpers.parsed_enums:
-        enum_info = {
-            'name': parsed_enum['name'],
-            'description': parsed_enum['description'],
-            'enum_type': stringcase.capitalcase(parsed_enum['name']),
-            'enum': parsed_enum['enums']
-        }
-        enums.append(enum_info)
+    if type_file:
+        for parsed_enum in helpers.parsed_enums:
+            enum_info = {
+                'name': parsed_enum['name'],
+                'description': parsed_enum['description'],
+                'enum_type': stringcase.capitalcase(parsed_enum['name']),
+                'enum': parsed_enum['enums']
+            }
+            enums.append(enum_info)
 
-    type_headers = set()
-    for parsed_type in helpers.parsed_types:
-        parsed_type['name'] = stringcase.capitalcase(parsed_type['name'])
-        if 'properties' in parsed_type:
-            for property in parsed_type['properties']:
-                if 'type_dict' in property['info']:
-                    path = Path('generated/types') / \
-                        property['info']['type_dict']['type_relative_path'].with_suffix('.hpp')
-                    type_headers.add(path.as_posix())
+    type_headers = helpers.type_headers
+    if type_file:
+        for parsed_type in helpers.parsed_types:
+            parsed_type['name'] = stringcase.capitalcase(parsed_type['name'])
+            if 'properties' in parsed_type:
+                for property in parsed_type['properties']:
+                    if 'type_dict' in property['info']:
+                        path = Path('generated/types') / \
+                            property['info']['type_dict']['type_relative_path'].with_suffix('.hpp')
+                        type_headers.add(path.as_posix())
 
-        types.append(parsed_type)
+            types.append(parsed_type)
 
     # find and rename duplicate enums and types
     duplicates = {}
@@ -321,7 +324,7 @@ def generate_module_files(mod, update_flag):
         # load template data for interface
         if_def, last_mtime = load_interface_definition(interface)
 
-        if_tmpl_data = generate_tmpl_data_for_if(interface, if_def)
+        if_tmpl_data = generate_tmpl_data_for_if(interface, if_def, False)
 
         if_tmpl_data['info'].update({
             'hpp_guard': helpers.snake_case(f'{impl["id"]}_{interface}').upper() + '_IMPL_HPP',
@@ -415,7 +418,7 @@ def generate_interface_headers(interface, all_interfaces_flag, output_dir):
             print(f'Ignoring interface {interface} with reason: {e}')
             return
 
-    tmpl_data = generate_tmpl_data_for_if(interface, if_def)
+    tmpl_data = generate_tmpl_data_for_if(interface, if_def, False)
 
     output_path = output_dir / interface
     output_path.mkdir(parents=True, exist_ok=True)

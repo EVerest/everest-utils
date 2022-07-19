@@ -16,7 +16,7 @@ boost::variant<{{ type.cpp_type|join(', ') }}>
 
 {% macro result_type(type, interface=none) -%}
 {% if type -%}
-{{ cpp_type(type, interface) }}
+{{ cpp_type(type) }}
 {%- else -%}
 void
 {%- endif %}
@@ -41,7 +41,7 @@ boost::any_cast<{{ arg.cpp_type }}>
 {% macro call_cmd_signature(cmd, interface=none) -%}
 {{ result_type(cmd.result, interface) }} call_{{ cmd.name }}(
 {%- for arg in cmd.args -%}
-{{ cpp_type(arg, interface) }} {{ arg.name }}{{ ', ' if not loop.last }}
+{{ cpp_type(arg) }} {{ arg.name }}{{ ', ' if not loop.last }}
 {%- endfor -%}
 )
 {%- endmacro %}
@@ -51,7 +51,7 @@ boost::any_cast<{{ arg.cpp_type }}>
 {{ result_type(cmd.result, interface) }} {% if class_name %}{{ class_name }}::{% endif -%}
 handle_{{ cmd.name }}(
 {%- for arg in cmd.args -%}
-{{ cpp_type(arg, interface) }}& {{ arg.name }}{{ ', ' if not loop.last }}
+{{ cpp_type(arg) }}& {{ arg.name }}{{ ', ' if not loop.last }}
 {%- endfor -%}
 )
 {%- endmacro %}

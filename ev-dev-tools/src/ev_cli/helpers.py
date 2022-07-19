@@ -75,7 +75,7 @@ def create_dummy_result(json_type) -> str:
             raise Exception(f'This json type "{type}" is not known or not implemented')
 
     if isinstance(json_type, list):
-        return '{}' # default initialization for variant
+        return '{}'  # default initialization for variant
     else:
         return primitive_to_sample_value(json_type)
 
@@ -110,7 +110,7 @@ def gather_git_info(repo):
 
 
 cpp_type_map = {
-    "null": "boost::blank", # FIXME (aw): check whether boost::blank or boost::none is more appropriate here
+    "null": "boost::blank",  # FIXME (aw): check whether boost::blank or boost::none is more appropriate here
     "integer": "int",
     "number": "double",
     "string": "std::string",
@@ -171,6 +171,7 @@ def build_type_info(name, json_type):
     return ti
 
 
+type_headers = set()
 parsed_types: List = []
 parsed_enums: List = []
 current_defs: Dict = {}
@@ -200,7 +201,7 @@ def add_enum_type(name: str, enums: Tuple[str], description: str):
     })
 
 
-def parse_property(prop_name: str, prop: Dict, depends_on: List[str]) -> Tuple[str, dict]:
+def parse_property(prop_name: str, prop: Dict, depends_on: List[str], type_file: bool) -> Tuple[str, dict]:
     """Determine type of property and proceed with it.
     In case it is a $ref, look it up in the TypeParser
     Currently, the following property types are supported:
@@ -217,26 +218,26 @@ def parse_property(prop_name: str, prop: Dict, depends_on: List[str]) -> Tuple[s
         'description': prop.get('description', 'TODO: description'),
         'prop': prop,
     }
-    if 'type' not in prop:
-        if '$ref' in prop:
-            if prop['$ref'] not in TypeParser.all_types:
-                raise Exception('$ref: ' + prop['$ref'] + f' is unknown.')
-            type_dict = TypeParser.all_types[prop['$ref']]
-            type_path = everest_dir / 'types' / type_dict['type_relative_path'] .with_suffix('.json')
-            if not type_path.exists():
-                raise Exception('$ref: ' + prop['$ref'] + f' referenced type file "{type_path} does not exist.')
+    if '$ref' in prop:
+        if prop['$ref'] not in TypeParser.all_types:
+            raise Exception('$ref: ' + prop['$ref'] + f' is unknown.')
+        type_dict = TypeParser.all_types[prop['$ref']]
+        type_path = everest_dir / 'types' / type_dict['type_relative_path'] .with_suffix('.json')
+        if not type_path.exists():
+            raise Exception('$ref: ' + prop['$ref'] + f' referenced type file "{type_path} does not exist.')
 
-            prop_type = type_dict['namespaced_type']
-            prop_info['prop']['type'] = prop_type
-            prop_info['type_dict'] = type_dict
+        prop_type = type_dict['namespaced_type']
+        prop_info['prop']['type'] = prop_type
+        prop_info['type_dict'] = type_dict
 
-            return (prop_type, prop_info)
-        else:
-            # if not defined, propably any
-            return ('any', None)
+        path = Path('generated/types') / \
+            type_dict['type_relative_path'].with_suffix('.hpp')
+        type_headers.add(path.as_posix())
+
+        return (prop_type, prop_info)
 
     if prop['type'] == 'string':
-        if 'enum' in prop:
+        if 'enum' in prop and type_file:
             prop_type = stringcase.capitalcase(prop_name)
             add_enum_type(prop_type, prop['enum'], prop_info['description'])
         elif 'format' in prop:
@@ -255,19 +256,22 @@ def parse_property(prop_name: str, prop: Dict, depends_on: List[str]) -> Tuple[s
     elif prop['type'] == 'boolean':
         prop_type = 'bool'
     elif prop['type'] == 'array':
-        prop_type = 'std::vector<' + parse_property(prop_name, prop['items'], depends_on)[0] + '>'
+        if 'items' in prop:
+            prop_type = 'std::vector<' + parse_property(prop_name, prop['items'], depends_on, type_file)[0] + '>'
+        else:
+            prop_type = 'std::vector<Array>'
     elif prop['type'] == 'object':
         prop_type = stringcase.capitalcase(prop_name)
         depends_on.append(prop_type)
         if not object_exists(prop_type):
-            parse_object(prop_type, prop)
+            parse_object(prop_type, prop, type_file)
     else:
         raise Exception('Unknown type: ' + prop['type'])
 
     return (prop_type, prop_info)
 
 
-def parse_object(ob_name: str, json_schema: Dict):
+def parse_object(ob_name: str, json_schema: Dict, type_file: bool):
     """Parse a JSON object.
     Iterates over the properties of this object, parses their type
     and puts these information into the global dict parsed_types.
@@ -278,12 +282,29 @@ def parse_object(ob_name: str, json_schema: Dict):
 
     if 'properties' not in json_schema:
         # object has no properties, probably not a complex object
+        if '$ref' in json_schema:
+            if json_schema['$ref'] not in TypeParser.all_types:
+                raise Exception('$ref: ' + json_schema['$ref'] + f' is unknown.')
+            type_dict = TypeParser.all_types[json_schema['$ref']]
+            type_path = everest_dir / 'types' / type_dict['type_relative_path'] .with_suffix('.json')
+            if not type_path.exists():
+                raise Exception('$ref: ' + json_schema['$ref'] + f' referenced type file "{type_path} does not exist.')
+
+            prop_type = type_dict['namespaced_type']
+            ob_dict['name'] = prop_type
+            path = Path('generated/types') / \
+                type_dict['type_relative_path'].with_suffix('.hpp')
+            type_headers.add(path.as_posix())
+            return ob_dict
+        return
+
+    if not type_file:
         return
 
     for prop_name, prop in json_schema['properties'].items():
         if not prop_name.isidentifier() or keyword.iskeyword(prop_name):
             raise Exception(prop_name + ' can\'t be used as an identifier!')
-        (prop_type, prop_info) = parse_property(prop_name, prop, ob_dict['depends_on'])
+        (prop_type, prop_info) = parse_property(prop_name, prop, ob_dict['depends_on'], type_file)
         ob_dict['properties'].append({
             'name': prop_name,
             'json_name': prop_name,
@@ -298,7 +319,7 @@ def parse_object(ob_name: str, json_schema: Dict):
     return ob_dict
 
 
-def extended_build_type_info(name: str, info: dict) -> Tuple[dict, dict]:
+def extended_build_type_info(name: str, info: dict, type_file=False) -> Tuple[dict, dict]:
     """Extend build_type_info with enum and object type handling."""
     type_info = build_type_info(name, info['type'])
     enum_info = None
@@ -314,9 +335,9 @@ def extended_build_type_info(name: str, info: dict) -> Tuple[dict, dict]:
 
             type_info['enum_type'] = enum_info['enum_type']
     elif type_info['json_type'] == 'object':
-        ob = parse_object(name, info)
+        ob = parse_object(name, info, type_file)
         if ob and 'name' in ob:
-            type_info['object_type'] = stringcase.capitalcase(ob['name'])
+            type_info['object_type'] = ob['name']
 
     return (type_info, enum_info)
 
@@ -370,7 +391,7 @@ def load_validators(schema_path):
     validators = {}
     for validator, filename in zip(
         ['interface', 'module', 'config', 'type'],
-        ['interface', 'manifest', 'config', 'type']):
+            ['interface', 'manifest', 'config', 'type']):
         try:
             schema = jstyleson.loads((schema_path / f'{filename}.json').read_text())
             jsonschema.Draft7Validator.check_schema(schema)

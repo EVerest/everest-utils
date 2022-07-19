@@ -73,7 +73,7 @@ private:
             {% for arg in cmd.args %}
                 {% if 'object_type' in arg %}
                     json {{ arg.name }}_json_object = boost::any_cast<Object>(args["{{ arg.name }}"]);
-                    {{ info.interface_name + '::' + arg.object_type }} {{ arg.name }} = {{ arg.name }}_json_object;
+                    {{ arg.object_type }} {{ arg.name }} = {{ arg.name }}_json_object;
                 {% else %}
                     auto {{ arg.name }} = {{ var_to_cpp(arg) }}(args["{{ arg.name }}"]);
                 {% endif %}
