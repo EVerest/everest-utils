@@ -1,12 +1,22 @@
-{% macro cpp_type(type) -%}
+{% macro cpp_type(type, interface=none) -%}
 {% if type.is_variant -%}
 boost::variant<{{ type.cpp_type|join(', ') }}>
 {%- else -%}
-{{ type.cpp_type }}
+    {% if interface is not none and 'object_type' in type %}
+        {{ interface + '::' + type.object_type }}
+    {% else %}
+        {% if 'object_type' in type %}
+            {{ type.object_type }}
+        {% elif 'enum_type' in type %}
+            {{ type.enum_type }}
+        {% else %}
+            {{ type.cpp_type }}
+        {% endif %}
+    {%- endif %}
 {%- endif %}
 {%- endmacro %}
 
-{% macro result_type(type) -%}
+{% macro result_type(type, interface=none) -%}
 {% if type -%}
 {{ cpp_type(type) }}
 {%- else -%}
@@ -30,17 +40,17 @@ boost::any_cast<{{ arg.cpp_type }}>
 {%- endif %}
 {%- endmacro %}
 
-{% macro call_cmd_signature(cmd) -%}
-{{ result_type(cmd.result) }} call_{{ cmd.name }}(
+{% macro call_cmd_signature(cmd, interface=none) -%}
+{{ result_type(cmd.result, interface) }} call_{{ cmd.name }}(
 {%- for arg in cmd.args -%}
 {{ cpp_type(arg) }} {{ arg.name }}{{ ', ' if not loop.last }}
 {%- endfor -%}
 )
 {%- endmacro %}
 
-{% macro handle_cmd_signature(cmd, class_name=None) -%}
+{% macro handle_cmd_signature(cmd, class_name=None, interface=none) -%}
 {% if not class_name %}virtual {% endif -%}
-{{ result_type(cmd.result) }} {% if class_name %}{{ class_name }}::{% endif -%}
+{{ result_type(cmd.result, interface) }} {% if class_name %}{{ class_name }}::{% endif -%}
 handle_{{ cmd.name }}(
 {%- for arg in cmd.args -%}
 {{ cpp_type(arg) }}& {{ arg.name }}{{ ', ' if not loop.last }}

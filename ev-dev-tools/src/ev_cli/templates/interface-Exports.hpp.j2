@@ -7,6 +7,8 @@
 
 #include <framework/ModuleAdapter.hpp>
 
+#include "Types.hpp"
+
 class {{ info.class_name }} {
 public:
     {{ info.class_name }}(Everest::ModuleAdapter* adapter, Requirement req, const std::string& module_id) : module_id(module_id), _adapter(adapter), _req(req){};
@@ -18,17 +20,21 @@ public:
     {% else %}
     // variables available for subscription
     {% for var in vars %}
-    void subscribe_{{ var.name }}(const std::function<void({% if var.json_type != 'null' %}{{ cpp_type(var) }}{% endif %})>& listener) {
+    void subscribe_{{ var.name }}(const std::function<void({% if var.json_type != 'null' %}{{ cpp_type(var, info.interface_name) }}{% endif %})>& listener) {
         ValueCallback cb = [listener](const Value& value) {
-            {% if var.json_type != 'null' %}
+        {% if 'object_type' in var %}
+            json json_object = boost::any_cast<Object>(value);
+            {{ info.interface_name + '::' + var.object_type }} native_value = json_object;
+            listener(native_value);
+        {% elif var.json_type != 'null' %}
             auto native_value = {{ var_to_cpp(var) }}(value);
             listener(native_value);
-            {% else %}
+        {% else %}
             if (value.type() != typeid({{ cpp_type(var) }})) {
                 EVLOG_error << "Callback for variable '{{ var.name }}' in interface '{{ info.interface }}' has wrong type!";
             }
             listener();
-            {% endif %}
+        {% endif %}
         };
         _adapter->subscribe(_req, "{{ var.name }}", cb);
     }
@@ -43,10 +49,15 @@ public:
     {% else %}
     // commands available to call
     {% for cmd in cmds %}
-    {{ call_cmd_signature(cmd) }} {
+    {{ call_cmd_signature(cmd, info.interface_name) }} {
         Parameters args;
         {% for arg in cmd.args %}
+        {% if 'enum_type' in arg %}
+        auto {{ arg.name }}_string = {{ arg.enum_type[:arg.enum_type.rfind('::')] }}::{{ arg.enum_type[(arg.enum_type.rfind('::')+2):] | snake_case }}_to_string({{ arg.name }});
+        args["{{ arg.name }}"] = {{ var_to_any(arg, arg.name + '_string') }};
+        {% else %}
         args["{{ arg.name }}"] = {{ var_to_any(arg, arg.name) }};
+        {% endif%}
         {% endfor %}
         {% if cmd.result %}Result result = {% endif %}_adapter->call(_req, "{{ cmd.name }}", args);
         {% if cmd.result %}
