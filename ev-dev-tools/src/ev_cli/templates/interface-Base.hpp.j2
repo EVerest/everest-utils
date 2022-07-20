@@ -91,6 +91,9 @@ private:
                 json json_result = result;
                 Object object_result = json_result;
                 return boost::any(object_result);
+            {% elif cmd.result and 'enum_type' in cmd.result %}
+                auto result_string = {{ cmd.result.enum_type[:cmd.result.enum_type.rfind('::')] }}::{{ cmd.result.enum_type[(cmd.result.enum_type.rfind('::')+2):] | snake_case }}_to_string(result);
+                return boost::any(result_string);
             {% else %}
                 return {{ var_to_any(cmd.result, 'result') if cmd.result else 'boost::none'}};
             {% endif %}

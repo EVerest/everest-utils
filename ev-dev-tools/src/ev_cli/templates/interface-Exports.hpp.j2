@@ -61,8 +61,11 @@ public:
         {% endfor %}
         {% if cmd.result %}Result result = {% endif %}_adapter->call(_req, "{{ cmd.name }}", args);
         {% if cmd.result %}
+        {% if 'enum_type' in cmd.result %}
+        auto retval = {{ cmd.result.enum_type[:cmd.result.enum_type.rfind('::')] }}::string_to_{{ cmd.result.enum_type[(cmd.result.enum_type.rfind('::')+2):] | snake_case }}({{ var_to_cpp(cmd.result) }}(result.get()));
+        {% else %}
         auto retval = {{ var_to_cpp(cmd.result) }}(result.get());
-
+        {% endif %}
         return retval;
         {% endif %}
     }
