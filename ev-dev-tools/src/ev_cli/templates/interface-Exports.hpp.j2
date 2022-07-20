@@ -52,7 +52,12 @@ public:
     {{ call_cmd_signature(cmd, info.interface_name) }} {
         Parameters args;
         {% for arg in cmd.args %}
+        {% if 'enum_type' in arg %}
+        auto {{ arg.name }}_string = {{ arg.enum_type[:arg.enum_type.rfind('::')] }}::{{ arg.enum_type[(arg.enum_type.rfind('::')+2):] | snake_case }}_to_string({{ arg.name }});
+        args["{{ arg.name }}"] = {{ var_to_any(arg, arg.name + '_string') }};
+        {% else %}
         args["{{ arg.name }}"] = {{ var_to_any(arg, arg.name) }};
+        {% endif%}
         {% endfor %}
         {% if cmd.result %}Result result = {% endif %}_adapter->call(_req, "{{ cmd.name }}", args);
         {% if cmd.result %}

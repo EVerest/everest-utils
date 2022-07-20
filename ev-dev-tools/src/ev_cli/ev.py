@@ -84,7 +84,7 @@ def generate_tmpl_data_for_if(interface, if_def, type_file):
             result_info = cmd_info['result']
 
             (result_type_info, enum_info) = helpers.extended_build_type_info('result', result_info, type_file)
-            if enum_info:
+            if enum_info and type_file:
                 enums.append(enum_info)
 
         cmds.append({'name': cmd, 'args': args, 'result': result_type_info})

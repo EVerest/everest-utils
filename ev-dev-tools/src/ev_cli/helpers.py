@@ -325,7 +325,7 @@ def extended_build_type_info(name: str, info: dict, type_file=False) -> Tuple[di
     enum_info = None
 
     if type_info['json_type'] == 'string':
-        if 'enum' in info:
+        if 'enum' in info and type_file:
             enum_info = {
                 'name': name,
                 'description': info.get('description', 'TODO: description'),
@@ -334,6 +334,28 @@ def extended_build_type_info(name: str, info: dict, type_file=False) -> Tuple[di
             }
 
             type_info['enum_type'] = enum_info['enum_type']
+        elif '$ref' in info:
+            if info['$ref'] not in TypeParser.all_types:
+                raise Exception('$ref: ' + info['$ref'] + f' is unknown.')
+            type_dict = TypeParser.all_types[info['$ref']]
+            type_path = everest_dir / 'types' / type_dict['type_relative_path'] .with_suffix('.json')
+            if not type_path.exists():
+                raise Exception('$ref: ' + info['$ref'] + f' referenced type file "{type_path} does not exist.')
+            (td, _mod) = TypeParser.load_type_definition(type_path)
+            if 'types' in td and type_dict['type_name'] in td['types']:
+                local_type_info = td['types'][type_dict['type_name']]
+                if local_type_info['type'] == 'string' and 'enum' in local_type_info:
+                    enum_info = {
+                        'name': name,
+                        'description': local_type_info.get('description', 'TODO: description'),
+                        'enum_type': type_dict['namespaced_type'],
+                        'enum': local_type_info['enum']
+                    }
+
+                    type_info['enum_type'] = enum_info['enum_type']
+            path = Path('generated/types') / \
+                type_dict['type_relative_path'].with_suffix('.hpp')
+            type_headers.add(path.as_posix())
     elif type_info['json_type'] == 'object':
         ob = parse_object(name, info, type_file)
         if ob and 'name' in ob:

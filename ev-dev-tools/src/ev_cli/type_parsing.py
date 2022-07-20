@@ -30,7 +30,8 @@ class TypeParser:
         type_dict = {
             'type_relative_path': None,
             'namespaced_type': None,
-            'header_file': None
+            'header_file': None,
+            'type_name': None
         }
         if not type_url.startswith('/'):
             raise Exception('type_url: ' + type_url + ' needs to start with a "/".')
@@ -42,6 +43,7 @@ class TypeParser:
         namespaced_type = 'types::' + '::'.join(type_relative_path.parts) + f'::{prop_type}'
         type_dict['type_relative_path'] = type_relative_path
         type_dict['namespaced_type'] = namespaced_type
+        type_dict['type_name'] = prop_type
 
         return type_dict
 
@@ -132,7 +134,7 @@ class TypeParser:
 
         tmpl_data['info']['interface_name'] = f'{type_with_namespace["namespace"]}'
         tmpl_data['info']['namespace'] = namespaces
-        tmpl_data['info']['hpp_guard'] = helpers.snake_case(
+        tmpl_data['info']['hpp_guard'] = 'TYPES_' + helpers.snake_case(
             ''.join(type_with_namespace["uppercase_path"])).upper() + '_TYPES_HPP'
 
         types_parts['types'] = {

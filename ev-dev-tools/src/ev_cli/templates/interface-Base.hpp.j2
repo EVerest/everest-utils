@@ -74,6 +74,9 @@ private:
                 {% if 'object_type' in arg %}
                     json {{ arg.name }}_json_object = boost::any_cast<Object>(args["{{ arg.name }}"]);
                     {{ arg.object_type }} {{ arg.name }} = {{ arg.name }}_json_object;
+                {% elif 'enum_type' in arg %}
+                    auto {{ arg.name }}_string = {{ var_to_cpp(arg) }}(args["{{ arg.name }}"]);
+                    auto {{ arg.name }} = {{ arg.enum_type[:arg.enum_type.rfind('::')] }}::string_to_{{ arg.enum_type[(arg.enum_type.rfind('::')+2):] | snake_case }}({{ arg.name }}_string);
                 {% else %}
                     auto {{ arg.name }} = {{ var_to_cpp(arg) }}(args["{{ arg.name }}"]);
                 {% endif %}

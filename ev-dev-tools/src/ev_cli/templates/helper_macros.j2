@@ -7,6 +7,8 @@ boost::variant<{{ type.cpp_type|join(', ') }}>
     {% else %}
         {% if 'object_type' in type %}
             {{ type.object_type }}
+        {% elif 'enum_type' in type %}
+            {{ type.enum_type }}
         {% else %}
             {{ type.cpp_type }}
         {% endif %}
