@@ -111,7 +111,7 @@ class TypeParser:
 
     @classmethod
     def generate_type_headers(cls, type_with_namespace, all_types, output_dir):
-        """Render template data to generate typer headers."""
+        """Render template data to generate type headers."""
         tmpl_data, last_mtime = TypeParser.generate_type_info(type_with_namespace, all_types)
 
         types_parts = {'types': None}
