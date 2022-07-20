@@ -50,8 +50,10 @@ class TypeParser:
         """Generate template data based on the provided type and type definition."""
         helpers.parsed_enums.clear()
         helpers.parsed_types.clear()
+        helpers.type_headers.clear()
         types = []
         enums = []
+        type_headers = []
 
         for type_name, type_properties in type_def.get('types', {}).items():
             type_url = f'/{type_with_namespace["relative_path"]}#/{type_name}'
@@ -73,10 +75,14 @@ class TypeParser:
             parsed_type['name'] = stringcase.capitalcase(parsed_type['name'])
             types.append(parsed_type)
 
+        for type_header in helpers.type_headers:
+            type_headers.append(type_header)
+
         tmpl_data = {
             'info': {
                 'type': type_with_namespace['namespace'],
                 'desc': type_def['description'],
+                'type_headers': type_headers,
             },
             'enums': enums,
             'types': types,
