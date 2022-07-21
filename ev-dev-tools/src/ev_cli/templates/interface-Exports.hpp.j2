@@ -1,4 +1,4 @@
-{% from "helper_macros.j2" import call_cmd_signature, var_to_any, var_to_cpp, print_template_info, cpp_type, print_spdx_line %}
+{% from "helper_macros.j2" import call_cmd_signature, var_to_any, var_to_cpp, print_template_info, cpp_type, result_type, print_spdx_line %}
 {{ print_spdx_line('Apache-2.0') }}
 #ifndef {{ info.hpp_guard }}
 #define {{ info.hpp_guard }}
@@ -20,11 +20,15 @@ public:
     {% else %}
     // variables available for subscription
     {% for var in vars %}
-    void subscribe_{{ var.name }}(const std::function<void({% if var.json_type != 'null' %}{{ cpp_type(var, info.interface_name) }}{% endif %})>& listener) {
+    void subscribe_{{ var.name }}(const std::function<void({% if var.json_type != 'null' %}{{ cpp_type(var) }}{% endif %})>& listener) {
         ValueCallback cb = [listener](const Value& value) {
         {% if 'object_type' in var %}
             json json_object = boost::any_cast<Object>(value);
-            {{ info.interface_name + '::' + var.object_type }} native_value = json_object;
+            {{ var.object_type }} native_value = json_object;
+            listener(native_value);
+        {% elif 'enum_type' in var %}
+            auto string_value = {{ var_to_cpp(var) }}(value);
+            auto native_value = {{ var.enum_type[:var.enum_type.rfind('::')] }}::string_to_{{ var.enum_type[(var.enum_type.rfind('::')+2):] | snake_case }}(string_value);
             listener(native_value);
         {% elif var.json_type != 'null' %}
             auto native_value = {{ var_to_cpp(var) }}(value);
@@ -63,6 +67,10 @@ public:
         {% if cmd.result %}
         {% if 'enum_type' in cmd.result %}
         auto retval = {{ cmd.result.enum_type[:cmd.result.enum_type.rfind('::')] }}::string_to_{{ cmd.result.enum_type[(cmd.result.enum_type.rfind('::')+2):] | snake_case }}({{ var_to_cpp(cmd.result) }}(result.get()));
+        {% elif 'object_type' in cmd.result %}
+        auto retval_object = boost::any_cast<Object>(result.get());
+        json retval_json = retval_object;
+        {{ result_type(cmd.result) }} retval = retval_json;
         {% else %}
         auto retval = {{ var_to_cpp(cmd.result) }}(result.get());
         {% endif %}

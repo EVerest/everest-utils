@@ -20,7 +20,7 @@ public:
     {% for var in vars %}
     void publish_{{ var.name }}(
     {% if 'object_type' in var %}
-        {{ info.interface_name + '::' + var.object_type }}
+        {{  var.object_type }}
     {% else %}
         {{  var.cpp_type }}
     {% endif %}
