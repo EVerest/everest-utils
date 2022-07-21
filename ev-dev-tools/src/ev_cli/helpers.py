@@ -283,7 +283,7 @@ def parse_object(ob_name: str, json_schema: Dict, type_file: bool):
     """
 
     ob_dict = {'name': ob_name, 'properties': [], 'depends_on': []}
-    parsed_types.insert(0, ob_dict)
+    parsed_types.append(ob_dict)
 
     if 'properties' not in json_schema:
         # object has no properties, probably not a complex object
