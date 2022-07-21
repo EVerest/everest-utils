@@ -217,6 +217,7 @@ def parse_property(prop_name: str, prop: Dict, depends_on: List[str], type_file:
     prop_info = {
         'description': prop.get('description', 'TODO: description'),
         'prop': prop,
+        'enum': False
     }
     if '$ref' in prop:
         if prop['$ref'] not in TypeParser.all_types:
@@ -225,7 +226,11 @@ def parse_property(prop_name: str, prop: Dict, depends_on: List[str], type_file:
         type_path = everest_dir / 'types' / type_dict['type_relative_path'] .with_suffix('.json')
         if not type_path.exists():
             raise Exception('$ref: ' + prop['$ref'] + f' referenced type file "{type_path} does not exist.')
-
+        (td, _mod) = TypeParser.load_type_definition(type_path)
+        if 'types' in td and type_dict['type_name'] in td['types']:
+            local_type_info = td['types'][type_dict['type_name']]
+            if local_type_info['type'] == 'string' and 'enum' in local_type_info:
+                prop_info['enum'] = True
         prop_type = type_dict['namespaced_type']
         prop_info['prop']['type'] = prop_type
         prop_info['type_dict'] = type_dict
@@ -310,7 +315,7 @@ def parse_object(ob_name: str, json_schema: Dict, type_file: bool):
             'json_name': prop_name,
             'type': prop_type,
             'info': prop_info,
-            'enum': 'enum' in prop,
+            'enum': 'enum' in prop or prop_info['enum'],
             'required': prop_name in json_schema.get('required', {}),
         })
 

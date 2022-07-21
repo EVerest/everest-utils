@@ -94,7 +94,7 @@ struct {{ parsed_type.name }} {
         {%- for property in parsed_type.properties %}
         {%- if property.required %}{"{{property.name}}",
             {%- if property.enum %}
-        {{info.interface_name}}::{{- property.type | snake_case}}_to_string(k.{{property.name}})
+                {{ property.type[:property.type.rfind('::')] }}::{{ property.type[(property.type.rfind('::')+2):] | snake_case }}_to_string(k.{{ property.name }})
             {%- else %}
                 {%- if property.type == 'DateTime' %}
         k.{{property.name}}.to_rfc3339()
@@ -131,7 +131,7 @@ struct {{ parsed_type.name }} {
                     }
         {% else %}
         {%- if property.enum %}
-        j["{{property.name}}"] = {{info.interface_name}}::{{- property.type | snake_case}}_to_string(k.{{property.name}}.value());
+        {{ property.type[:property.type.rfind('::')] }}::{{ property.type[(property.type.rfind('::')+2):] | snake_case }}_to_string(k.{{ property.name }}.value());
             {%- else %}
                 {%- if property.type == 'DateTime' %}
         j["{{property.name}}"] = k.{{property.name}}.value().to_rfc3339();
@@ -158,7 +158,7 @@ struct {{ parsed_type.name }} {
                 {% else %}
                     k.{{property.name}} =
                     {%- if property.enum %}
-                        {{info.interface_name}}::string_to_{{- property.type | snake_case}}(j.at("{{property.name}}"))
+                        {{ property.type[:property.type.rfind('::')] }}::string_to_{{ property.type[(property.type.rfind('::')+2):] | snake_case }}(j.at("{{property.name}}"))
                     {%- else %}
                         {%- if property.type == 'DateTime' %}
                             DateTime(std::string(j.at("{{property.name}}")));
