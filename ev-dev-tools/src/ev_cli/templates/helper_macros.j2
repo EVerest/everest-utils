@@ -9,6 +9,8 @@ boost::variant<{{ type.cpp_type|join(', ') }}>
             {{ type.object_type }}
         {% elif 'enum_type' in type %}
             {{ type.enum_type }}
+        {% elif 'array_type' in type %}
+            std::vector<{{ type.array_type }}>
         {% else %}
             {{ type.cpp_type }}
         {% endif %}

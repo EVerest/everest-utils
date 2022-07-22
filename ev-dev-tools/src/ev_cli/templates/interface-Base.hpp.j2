@@ -77,6 +77,9 @@ private:
                 {% elif 'enum_type' in arg %}
                     auto {{ arg.name }}_string = {{ var_to_cpp(arg) }}(args["{{ arg.name }}"]);
                     auto {{ arg.name }} = {{ arg.enum_type[:arg.enum_type.rfind('::')] }}::string_to_{{ arg.enum_type[(arg.enum_type.rfind('::')+2):] | snake_case }}({{ arg.name }}_string);
+                {% elif 'array_type' in arg %}
+                    json {{ arg.name }}_json_array = boost::any_cast<Array>(args["{{ arg.name }}"]);
+                    std::vector<{{ arg.array_type }}> {{ arg.name }} = {{ arg.name }}_json_array;
                 {% else %}
                     auto {{ arg.name }} = {{ var_to_cpp(arg) }}(args["{{ arg.name }}"]);
                 {% endif %}

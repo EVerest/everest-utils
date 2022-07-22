@@ -59,6 +59,14 @@ public:
         {% if 'enum_type' in arg %}
         auto {{ arg.name }}_string = {{ arg.enum_type[:arg.enum_type.rfind('::')] }}::{{ arg.enum_type[(arg.enum_type.rfind('::')+2):] | snake_case }}_to_string({{ arg.name }});
         args["{{ arg.name }}"] = {{ var_to_any(arg, arg.name + '_string') }};
+        {% elif 'object_type' in arg %}
+        json {{ arg.name }}_json = {{ arg.name }};
+        Object {{ arg.name }}_object = {{ arg.name }}_json;
+        args["{{ arg.name }}"] = {{ var_to_any(arg, arg.name + '_object') }};
+        {% elif 'array_type' in arg %}
+        json {{ arg.name }}_json = {{ arg.name }};
+        Array {{ arg.name }}_array = {{ arg.name }}_json;
+        args["{{ arg.name }}"] = {{ var_to_any(arg, arg.name + '_array') }};
         {% else %}
         args["{{ arg.name }}"] = {{ var_to_any(arg, arg.name) }};
         {% endif%}
