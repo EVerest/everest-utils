@@ -627,7 +627,8 @@ def main():
     common_parser.add_argument("--everest-dir", "-ed", type=str,
                                help='everest directory containing the interface definitions (default: .)', default=str(Path.cwd()))
     common_parser.add_argument("--schemas-dir", "-sd", type=str,
-                               help='everest framework directory containing the schema definitions (default: ../everest-framework/schemas)', default=str(Path.cwd() / '../everest-framework/schemas'))
+                               help='everest framework directory containing the schema definitions (default: ../everest-framework/schemas)',
+                               default=str(Path.cwd() / '../everest-framework/schemas'))
     common_parser.add_argument("--clang-format-file", type=str, default=str(Path.cwd()),
                                help='Path to the directory, containing the .clang-format file (default: .)')
     common_parser.add_argument("--disable-clang-format", action='store_true', default=False,
