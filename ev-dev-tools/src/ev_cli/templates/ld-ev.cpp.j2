@@ -94,6 +94,7 @@ std::vector<Everest::cmd> everest_register(const json& connections) {
     {% if info.enable_external_mqtt %}
     static Everest::MqttProvider mqtt_provider(adapter);
     {% endif %}
+    static Everest::TelemetryProvider telemetry_provider(adapter);
 
     static {{ info.class_name }} module(
     module_info,
@@ -104,7 +105,8 @@ std::vector<Everest::cmd> everest_register(const json& connections) {
     {%- for requirement in requires -%}
     std::move(r_{{ requirement.id }}){{ ', ' }}
     {%- endfor -%}
-    module_conf);
+    module_conf,
+    telemetry_provider);
 
     mod_ptr.set(&module);
 
