@@ -99,14 +99,14 @@ std::vector<Everest::cmd> everest_register(const json& connections) {
     static {{ info.class_name }} module(
     module_info,
     {%- if info.enable_external_mqtt %}mqtt_provider, {% endif -%}
+    {%- if info.enable_telemetry %}telemetry_provider, {% endif -%}
     {%- for impl in provides -%}
     std::move(p_{{ impl.id }}){{ ', ' }}
     {%- endfor -%}
     {%- for requirement in requires -%}
     std::move(r_{{ requirement.id }}){{ ', ' }}
     {%- endfor -%}
-    module_conf,
-    telemetry_provider);
+    module_conf);
 
     mod_ptr.set(&module);
 

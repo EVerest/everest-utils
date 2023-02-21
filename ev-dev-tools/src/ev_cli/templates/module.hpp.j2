@@ -39,6 +39,9 @@ public:
         {% if info.enable_external_mqtt %}
         Everest::MqttProvider& mqtt_provider,
         {% endif %}
+        {% if info.enable_telemetry %}
+        Everest::TelemetryProvider& telemetry,
+        {% endif %}
         {% for impl in provides %}
         std::unique_ptr<{{ impl.base_class }}> p_{{ impl.id }},
         {% endfor %}
@@ -49,12 +52,14 @@ public:
         std::unique_ptr<{{ requirement.class_name }}> r_{{ requirement.id }},
         {% endif %}
         {% endfor %}
-        Conf& config,
-        Everest::TelemetryProvider& telemetry
+        Conf& config
     ) :
         ModuleBase(info),
         {% if info.enable_external_mqtt %}
         mqtt(mqtt_provider),
+        {% endif %}
+        {% if info.enable_telemetry %}
+        telemetry(telemetry),
         {% endif %}
         {% for impl in provides %}
         p_{{ impl.id }}(std::move(p_{{ impl.id }})),
@@ -62,8 +67,7 @@ public:
         {% for requirement in requires %}
         r_{{ requirement.id }}(std::move(r_{{ requirement.id }})),
         {% endfor %}
-        config(config),
-        telemetry(telemetry)
+        config(config)
     {};
 
     const Conf& config;
