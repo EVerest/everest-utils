@@ -53,6 +53,8 @@ class EverestCore:
         logging.info(everest_dist_path)
         args = [manager_bin_path, '--prefix',
                 everest_dist_path, '--conf', str(self.everest_config_path)]
+
+        logging.info(f"{manager_bin_path} --prefix {everest_dist_path} --conf {str(self.everest_config_path)}")
         self.create_testing_user_config()
         expected_log = 'Ready to start charging'
         if standalone_module is not None:
@@ -73,6 +75,7 @@ class EverestCore:
                 continue
             if rl:
                 output = rl.strip().decode('utf-8')
+                logging.debug(f"  {output}")
 
         if expected_log not in output:
             logging.error("Timeout while waiting for EVerest to start")
