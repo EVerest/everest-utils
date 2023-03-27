@@ -102,7 +102,7 @@ class EverestCore:
         If a user-config already exists, it will be re-named and afterwards restored to its original name.
         (see "restore_previous_config()" method)
         """
-        file = self.everest_core_user_config_path / 'config-sil.yaml'
+        file = self.everest_core_user_config_path / self.everest_config_path.name
         filename = str(file)
 
         if os.path.exists(filename):
@@ -129,10 +129,5 @@ class EverestCore:
     def restore_previous_config(self):
         """Restores a pre-existing user-config file, if applicable.
         """
-        config_sil_path = Path(
-            self.everest_core_user_config_path / 'config-sil.yaml')
-        config_sil_file = str(config_sil_path)
-
-        if self.pre_existing_user_config is not None:
-            os.rename(self.pre_existing_user_config, config_sil_file)
-            self.pre_existing_user_config = None
+        # FIXME: is this even still needed when using temporary config files?
+        pass
