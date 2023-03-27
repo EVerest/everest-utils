@@ -31,6 +31,7 @@ class EverestTestController(TestController):
         self.temp_ocpp_user_config_file = tempfile.NamedTemporaryFile(delete=True, mode="w+", suffix=".json")
         self.temp_ocpp_database_dir = tempfile.TemporaryDirectory()
         self.temp_ocpp_log_dir = tempfile.TemporaryDirectory()
+        self.temp_ocpp_certs_dir = tempfile.TemporaryDirectory()
         self.mqtt_external_prefix = ""
 
     def start(self, central_system_port=None):
@@ -50,6 +51,7 @@ class EverestTestController(TestController):
         everest_config["active_modules"]["charge_point"]["config_module"]["UserConfigPath"] = self.temp_ocpp_user_config_file.name
         everest_config["active_modules"]["charge_point"]["config_module"]["DatabasePath"] = self.temp_ocpp_database_dir.name
         everest_config["active_modules"]["charge_point"]["config_module"]["MessageLogPath"] = self.temp_ocpp_log_dir.name
+        everest_config["active_modules"]["charge_point"]["config_module"]["CertsPath"] = self.temp_ocpp_certs_dir.name
 
         # namespace everest with uids
         everest_uuid = uuid.uuid4().hex
@@ -70,11 +72,17 @@ class EverestTestController(TestController):
             self.config_path.parent / 'config/user-config')
         self.everest_core.everest_core_user_config_path.mkdir(parents=True, exist_ok=True)
 
+        # install default certificates
+        certs_dir = self.everest_core.everest_core_build_path / "dist/etc/everest/certs"
+        shutil.copytree(f"{certs_dir}/ca", f"{self.temp_ocpp_certs_dir.name}/ca")
+        shutil.copytree(f"{certs_dir}/client", f"{self.temp_ocpp_certs_dir.name}/client")
+
         logging.info(f"everest uuid: {everest_uuid}")
         logging.info(f"temp everest config: {self.config_path}")
         logging.info(f"temp everest user config: {self.everest_core.everest_core_user_config_path}")
         logging.info(f"temp ocpp config: {self.temp_ocpp_config_file.name}")
         logging.info(f"temp ocpp user config: {self.temp_ocpp_user_config_file.name}")
+        logging.info(f"temp ocpp certs path: {self.temp_ocpp_certs_dir.name}")
 
         # FIXME: this is the everest config, not the ocpp config being copied...
         # self.copy_occp_config()
