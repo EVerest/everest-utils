@@ -82,6 +82,7 @@ class EverestTestController(TestController):
 
         # install default certificates
         certs_dir = self.everest_core.everest_core_build_path / "dist/etc/everest/certs"
+        # FIXME: dirs_exist_ok only available from python >= 3.8
         shutil.copytree(f"{certs_dir}/ca", f"{self.temp_ocpp_certs_dir.name}/ca", dirs_exist_ok=True)
         shutil.copytree(f"{certs_dir}/client", f"{self.temp_ocpp_certs_dir.name}/client", dirs_exist_ok=True)
 
