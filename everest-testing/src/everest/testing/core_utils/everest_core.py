@@ -3,12 +3,15 @@
 
 import logging
 import os
+import signal
+from threading import Thread
 import time
 import subprocess
 from pathlib import Path
 import datetime
 
-STARTUP_TIMEOUT=30
+STARTUP_TIMEOUT = 30
+
 
 class EverestCore:
     """This class can be used to configure, start and stop a full build of everest-core
@@ -32,6 +35,8 @@ class EverestCore:
             self.everest_core_path / 'config/user-config')
         self.pre_existing_user_config = None
 
+        self.log_reader_thread = None
+        self.everest_running = False
 
     def start(self, standalone_module=None):
         """Starts everest-core in a subprocess
@@ -81,21 +86,38 @@ class EverestCore:
             logging.error("Timeout while waiting for EVerest to start")
             raise TimeoutError("Timeout while waiting for EVerest to start")
 
+        self.everest_running = True
         logging.info("EVerest has started")
 
+        self.log_reader_thread = Thread(target=self.read_everest_log).start()
+
+    def read_everest_log(self):
+        while self.everest_running:
+            rl = self.process.stderr.readline()
+            if rl == b'' and self.process.poll() is not None:
+                if self.process.returncode == 0:
+                    logging.info(f"EVerest stopped with return code 0")
+                elif self.process.returncode < 0:
+                    logging.info(f"EVerest stopped by signal {signal.Signals(-self.process.returncode).name}")
+                else:
+                    logging.warning(f"EVerest stopped with return code: {self.process.returncode}")
+                break
+            if rl:
+                output = rl.strip().decode('utf-8')
+                logging.debug(f"  {output}")
+        logging.debug("EVerest output stopped")
 
     def stop(self):
         """Stops execution of EVerest by signaling SIGINT
         """
         logging.debug("CONTROLLER stop() function called...")
-
         if self.process != None:
             import signal
             self.process.send_signal(signal.SIGINT)
             self.process.wait()
+        self.everest_running = False
 
         self.restore_previous_config()
-
 
     def create_testing_user_config(self):
         """Creates a user-config file to include the PyTestControlModule in the current SIL simulation.
@@ -124,7 +146,6 @@ class EverestCore:
           module_id: car_simulator
     module: PyTestControlModule
 ''')
-
 
     def restore_previous_config(self):
         """Restores a pre-existing user-config file, if applicable.
