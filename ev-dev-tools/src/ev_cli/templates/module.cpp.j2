@@ -1,6 +1,8 @@
 {% from "helper_macros.j2" import print_spdx_line %}
 {{ print_spdx_line('Apache-2.0') }}
 #include "{{ info.module_header }}"
+#include <csignal>
+#include <utils/exit_handler.hpp>
 
 namespace module {
 
@@ -11,6 +13,8 @@ void {{ info.class_name }}::init() {
 }
 
 void {{ info.class_name }}::ready() {
+    std::signal(SIGINT,  Everest::ExitHandler::exit_handler);
+    std::signal(SIGTERM, Everest::ExitHandler::exit_handler);
     {% for impl in provides %}
     invoke_ready(*p_{{ impl.id }});
     {% endfor %}
