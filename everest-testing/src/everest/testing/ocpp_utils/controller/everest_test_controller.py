@@ -21,14 +21,13 @@ class EverestTestController(TestController):
 
     def __init__(self, everest_core_path, config_path: Path, chargepoint_id: str,
                  test_function_name: str = None, ocpp_module_id: str = "ocpp") -> None:
-        self.everest_core = EverestCore(everest_core_path, config_path)
+        self.everest_core = EverestCore(everest_core_path, config_path, [])
         self.config_path = config_path
         self.mqtt_client = None
         self.chargepoint_id = chargepoint_id
         self.test_function_name = test_function_name
-        self.temp_everest_config_file = tempfile.NamedTemporaryFile(delete=True, mode="w+", suffix=".yaml")
-        self.temp_ocpp_config_file = tempfile.NamedTemporaryFile(delete=True, mode="w+", suffix=".json")
-        self.temp_ocpp_user_config_file = tempfile.NamedTemporaryFile(delete=True, mode="w+", suffix=".json")
+        self.temp_ocpp_config_file = tempfile.NamedTemporaryFile(delete=False, mode="w+", suffix=".json")
+        self.temp_ocpp_user_config_file = tempfile.NamedTemporaryFile(delete=False, mode="w+", suffix=".json")
         self.temp_ocpp_database_dir = tempfile.TemporaryDirectory()
         self.temp_ocpp_log_dir = tempfile.TemporaryDirectory()
         self.temp_ocpp_certs_dir = tempfile.TemporaryDirectory()
@@ -39,9 +38,10 @@ class EverestTestController(TestController):
     def start(self, central_system_port=None):
         logging.info(f"Central system port: {central_system_port}")
         # modify ocpp config with given central system port and modify everest-core config as well
-        everest_config = yaml.safe_load(self.config_path.read_text())
+        everest_config = yaml.safe_load(self.everest_core.everest_config_path.read_text())
         ocpp_dir = self.everest_core.everest_core_build_path / "dist/share/everest/ocpp"
-        ocpp_config_path = ocpp_dir / everest_config["active_modules"][self.ocpp_module_id]["config_module"]["ChargePointConfigPath"]
+        ocpp_config_path = ocpp_dir / \
+            everest_config["active_modules"][self.ocpp_module_id]["config_module"]["ChargePointConfigPath"]
         ocpp_config = json.loads(ocpp_config_path.read_text())
         charge_point_id = ocpp_config["Internal"]["ChargePointId"]
         ocpp_config["Internal"]["CentralSystemURI"] = f"127.0.0.1:{central_system_port}/{charge_point_id}"
@@ -59,24 +59,8 @@ class EverestTestController(TestController):
             everest_config["active_modules"][self.ocpp_module_id]["config_module"]["MessageLogPath"] = self.temp_ocpp_log_dir.name
             everest_config["active_modules"][self.ocpp_module_id]["config_module"]["CertsPath"] = self.temp_ocpp_certs_dir.name
 
-        # namespace everest with uids
-        everest_uuid = uuid.uuid4().hex
-        self.mqtt_external_prefix = f"external_{everest_uuid}"
-        everest_config["settings"] = {}
-        everest_config["settings"]["mqtt_everest_prefix"] = f"everest_{everest_uuid}"
-        everest_config["settings"]["mqtt_external_prefix"] = self.mqtt_external_prefix
-        everest_config["settings"]["telemetry_prefix"] = f"telemetry_{everest_uuid}"
-
-        # make sure controller starts with a dynamic port
-        everest_config["settings"]["controller_port"] = 0
-
-        yaml.dump(everest_config, self.temp_everest_config_file)
-
-        self.config_path = Path(self.temp_everest_config_file.name)
-        self.everest_core.everest_config_path = self.config_path
-        self.everest_core.everest_core_user_config_path = Path(
-            self.config_path.parent / 'config/user-config')
-        self.everest_core.everest_core_user_config_path.mkdir(parents=True, exist_ok=True)
+        self.everest_core.temp_everest_config_file.seek(0)
+        yaml.dump(everest_config, self.everest_core.temp_everest_config_file)
 
         # install default certificates
         certs_dir = self.everest_core.everest_core_build_path / "dist/etc/everest/certs"
@@ -84,19 +68,17 @@ class EverestTestController(TestController):
         shutil.copytree(f"{certs_dir}/ca", f"{self.temp_ocpp_certs_dir.name}/ca", dirs_exist_ok=True)
         shutil.copytree(f"{certs_dir}/client", f"{self.temp_ocpp_certs_dir.name}/client", dirs_exist_ok=True)
 
-        logging.info(f"everest uuid: {everest_uuid}")
-        logging.info(f"temp everest config: {self.config_path}")
-        logging.info(f"temp everest user config: {self.everest_core.everest_core_user_config_path}")
         logging.info(f"temp ocpp config: {self.temp_ocpp_config_file.name}")
         logging.info(f"temp ocpp user config: {self.temp_ocpp_user_config_file.name}")
         logging.info(f"temp ocpp certs path: {self.temp_ocpp_certs_dir.name}")
 
         self.everest_core.start(None)
+        self.mqtt_external_prefix = self.everest_core.mqtt_external_prefix
 
         mqtt_server_uri = os.environ.get("MQTT_SERVER_ADDRESS", "127.0.0.1")
         mqtt_server_port = int(os.environ.get("MQTT_SERVER_PORT", "1883"))
 
-        self.mqtt_client = mqtt_client.Client(everest_uuid)
+        self.mqtt_client = mqtt_client.Client(self.everest_core.everest_uuid)
         self.mqtt_client.connect(mqtt_server_uri, mqtt_server_port)
 
         self.mqtt_client.publish(
