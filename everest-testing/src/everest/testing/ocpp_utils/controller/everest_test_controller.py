@@ -50,7 +50,7 @@ class EverestTestController(TestController):
             self.first_run = False
             self.temp_ocpp_config_file.write(json.dumps(ocpp_config))
             self.temp_ocpp_config_file.flush()
-            self.temp_ocpp_user_config_file.write(f"{{}}")
+            self.temp_ocpp_user_config_file.write("{}")
             self.temp_ocpp_user_config_file.flush()
         if "active_modules" in everest_config and self.ocpp_module_id in everest_config["active_modules"]:
             everest_config["active_modules"][self.ocpp_module_id]["config_module"]["ChargePointConfigPath"] = self.temp_ocpp_config_file.name
@@ -80,7 +80,7 @@ class EverestTestController(TestController):
 
         # install default certificates
         certs_dir = self.everest_core.everest_core_build_path / "dist/etc/everest/certs"
-        # FIXME: dirs_exist_ok only available from python >= 3.8
+
         shutil.copytree(f"{certs_dir}/ca", f"{self.temp_ocpp_certs_dir.name}/ca", dirs_exist_ok=True)
         shutil.copytree(f"{certs_dir}/client", f"{self.temp_ocpp_certs_dir.name}/client", dirs_exist_ok=True)
 
@@ -91,8 +91,6 @@ class EverestTestController(TestController):
         logging.info(f"temp ocpp user config: {self.temp_ocpp_user_config_file.name}")
         logging.info(f"temp ocpp certs path: {self.temp_ocpp_certs_dir.name}")
 
-        # FIXME: this is the everest config, not the ocpp config being copied...
-        # self.copy_occp_config()
         self.everest_core.start(None)
 
         mqtt_server_uri = os.environ.get("MQTT_SERVER_ADDRESS", "127.0.0.1")
