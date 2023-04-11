@@ -117,12 +117,9 @@ class EverestCore:
             self.process.wait()
         self.everest_running = False
 
-        self.restore_previous_config()
-
     def create_testing_user_config(self):
         """Creates a user-config file to include the PyTestControlModule in the current SIL simulation.
-        If a user-config already exists, it will be re-named and afterwards restored to its original name.
-        (see "restore_previous_config()" method)
+        If a user-config already exists, it will be re-named
         """
         file = self.everest_core_user_config_path / self.everest_config_path.name
         filename = str(file)
@@ -131,6 +128,8 @@ class EverestCore:
             now = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
             self.pre_existing_user_config = Path(filename + "_" + str(now))
             os.rename(filename, self.pre_existing_user_config)
+            logging.warning(
+                f"User config '{filename}' already exists, renaming to '{self.pre_existing_user_config.as_posix()}'. This should not happen.")
 
         with open(file, "a") as f:
             f.write('''active_modules:
@@ -146,9 +145,3 @@ class EverestCore:
           module_id: car_simulator
     module: PyTestControlModule
 ''')
-
-    def restore_previous_config(self):
-        """Restores a pre-existing user-config file, if applicable.
-        """
-        # FIXME: is this even still needed when using temporary config files?
-        pass
