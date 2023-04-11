@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.DEBUG)
 class EverestTestController(TestController):
 
     def __init__(self, everest_core_path, config_path: Path, chargepoint_id: str,
-                 test_function_name: str = None) -> None:
+                 test_function_name: str = None, ocpp_module_id: str = "ocpp") -> None:
         self.everest_core = EverestCore(everest_core_path, config_path)
         self.config_path = config_path
         self.mqtt_client = None
@@ -34,14 +34,12 @@ class EverestTestController(TestController):
         self.temp_ocpp_certs_dir = tempfile.TemporaryDirectory()
         self.first_run = True
         self.mqtt_external_prefix = ""
-        self.ocpp_module_id = "charge_point"
+        self.ocpp_module_id = ocpp_module_id
 
     def start(self, central_system_port=None):
         logging.info(f"Central system port: {central_system_port}")
         # modify ocpp config with given central system port and modify everest-core config as well
         everest_config = yaml.safe_load(self.config_path.read_text())
-        if "ocpp" in everest_config["active_modules"]:
-            self.ocpp_module_id = "ocpp"
         ocpp_dir = self.everest_core.everest_core_build_path / "dist/share/everest/ocpp"
         ocpp_config_path = ocpp_dir / everest_config["active_modules"][self.ocpp_module_id]["config_module"]["ChargePointConfigPath"]
         ocpp_config = json.loads(ocpp_config_path.read_text())
