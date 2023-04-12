@@ -129,7 +129,7 @@ class EverestCore:
             rl = self.process.stderr.readline()
             if rl == b'' and self.process.poll() is not None:
                 if self.process.returncode == 0:
-                    logging.info(f"EVerest stopped with return code 0")
+                    logging.info("EVerest stopped with return code 0")
                 elif self.process.returncode < 0:
                     logging.info(f"EVerest stopped by signal {signal.Signals(-self.process.returncode).name}")
                 else:
