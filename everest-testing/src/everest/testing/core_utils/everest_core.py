@@ -36,9 +36,9 @@ class EverestCore:
         """
         self.process = None
         self.everest_uuid = uuid.uuid4().hex
-        self.temp_everest_config_dir = tempfile.TemporaryDirectory(prefix=self.everest_uuid)
+        self.temp_everest_config_dir = tempfile.mkdtemp(prefix=self.everest_uuid)
         self.temp_everest_config_file = tempfile.NamedTemporaryFile(
-            delete=False, mode="w+", suffix=".yaml", dir=self.temp_everest_config_dir.name)
+            delete=False, mode="w+", suffix=".yaml", dir=self.temp_everest_config_dir)
         self.everest_core_user_config_path = Path(
             self.temp_everest_config_file.name).parent / 'user-config'
         self.everest_core_user_config_path.mkdir(parents=True, exist_ok=True)
