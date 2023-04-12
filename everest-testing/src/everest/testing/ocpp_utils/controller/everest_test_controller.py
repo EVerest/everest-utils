@@ -9,7 +9,6 @@ from paho.mqtt import client as mqtt_client
 import logging
 import yaml
 import tempfile
-import uuid
 
 from everest.testing.ocpp_utils.controller.test_controller_interface import TestController
 from everest.testing.core_utils.everest_core import EverestCore
