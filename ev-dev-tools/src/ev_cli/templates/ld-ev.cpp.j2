@@ -124,6 +124,9 @@ int main(int argc, char* argv[]) {
     auto module_loader = Everest::ModuleLoader(argc, argv, Everest::ModuleCallbacks(
         module::register_module_adapter, module::everest_register,
         module::LdEverest::init, module::LdEverest::ready, module::LdEverest::shutdown));
-
-    return module_loader.initialize();
+    try {
+        return module_loader.initialize();
+    } catch (const EverestShuttingDown& e) {
+        return 0;
+    }
 }
