@@ -21,6 +21,7 @@ STARTUP_TIMEOUT = 30
 class TestControlModuleConnection(TypedDict):
     evse_manager_id: str
     car_simulator_id: str
+    ocpp_id: str
 
 
 class StatusFifoListener:
@@ -201,12 +202,14 @@ class EverestCore:
         if self.test_control_modules:
             logging.info(f"Adding test control module(s) to user-config: {self.test_control_modules}")
             user_config = {"active_modules": {}}
-            connections = {"connector_1": [], "test_control": []}
+            connections = {"connector_1": [], "test_control": [], "ocpp": []}
             for test_control_module in self.test_control_modules:
                 connections["connector_1"].append(
                     {"implementation_id": "evse", "module_id": test_control_module["evse_manager_id"]})
                 connections["test_control"].append(
                     {"implementation_id": "main", "module_id": test_control_module["car_simulator_id"]})
+                connections["ocpp"].append(
+                    {"implementation_id": "main", "module_id": test_control_module["ocpp_id"]})
 
             user_config["active_modules"]["probe_module"] = {
                 "config_module": {"device": "auto"},
