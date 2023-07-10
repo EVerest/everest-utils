@@ -169,16 +169,6 @@ class EverestCore:
         logging.info("EVerest has started")
         if expected_status == 'ALL_MODULES_STARTED':
             self.all_modules_started_event.set()
-        else:
-            def read_fifo():
-                if self.status_listener.wait_for_status(10, ["ALL_MODULES_STARTED"]):
-                    self.all_modules_started_event.set()
-                    logging.info("set all modules started event...")
-            trd = threading.Thread(target=read_fifo)
-            trd.start()
-
-    def wait_for_all_modules_started(self, timeout=20) -> bool:
-        return self.all_modules_started_event.wait(timeout)
 
     def read_everest_log(self):
         while self.process.poll() == None:
