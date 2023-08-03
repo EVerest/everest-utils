@@ -19,10 +19,41 @@ from signal import SIGINT
 STARTUP_TIMEOUT = 30
 
 
+class ModuleConnection(TypedDict):
+    implementation_id: str
+    module_id: str
+
+
 class TestControlModuleConnection(TypedDict):
-    evse_manager_id: str
-    car_simulator_id: str
-    ocpp_id: str
+    auth_token_provider: ModuleConnection
+    auth_token_validator: ModuleConnection
+    auth: ModuleConnection
+    board_support_AC: ModuleConnection
+    car_simulator: ModuleConnection
+    energy_manager: ModuleConnection
+    energy_price_information: ModuleConnection
+    energy: ModuleConnection
+    evse_manager: ModuleConnection
+    ev_slac: ModuleConnection
+    external_energy_limits: ModuleConnection
+    ISO15118_charger: ModuleConnection
+    ISO15118_ev: ModuleConnection
+    isolation_monitor: ModuleConnection
+    ocpp_1_6_charge_point: ModuleConnection
+    powermeter: ModuleConnection
+    power_supply_DC: ModuleConnection
+    power: ModuleConnection
+    reservation: ModuleConnection
+    serial_communication_hub: ModuleConnection
+    slac: ModuleConnection
+    solar_forecast: ModuleConnection
+    sunspec_ac_meter: ModuleConnection
+    sunspec_reader: ModuleConnection
+    sunspec_scanner: ModuleConnection
+    system: ModuleConnection
+    tibber_price_forecast: ModuleConnection
+    yeti_extras: ModuleConnection
+    yeti_simulation_control: ModuleConnection
 
 
 class StatusFifoListener:
@@ -197,6 +228,10 @@ class EverestCore:
         if self.log_reader_thread:
             self.log_reader_thread.join()
 
+    def create_module_connection(self, test_control_module_connection_id, test_control_module_connection, connections):
+        connections[test_control_module_connection_id].append(
+            {"implementation_id": test_control_module_connection["implementation_id"], "module_id": test_control_module_connection["module_id"]})
+
     def create_testing_user_config(self):
         """Creates a user-config file to include the PyTestControlModule in the current SIL simulation.
         If a user-config already exists, it will be re-named
@@ -206,15 +241,11 @@ class EverestCore:
         if self.test_control_modules:
             logging.info(f"Adding test control module(s) to user-config: {self.test_control_modules}")
             user_config = {"active_modules": {}}
-            connections = {"connector_1": [], "test_control": [], "ocpp": []}
+            connections = {"auth_token_provider": [], "auth_token_validator": [], "auth": [], "board_support_AC": [], "car_simulator": [], "energy_manager": [], "energy_price_information": [], "energy": [], "evse_manager": [], "ev_slac": [], "external_energy_limits": [], "ISO15118_charger": [], "ISO15118_ev": [], "isolation_monitor": [
+            ], "ocpp_1_6_charge_point": [], "powermeter": [], "power_supply_DC": [], "power": [], "reservation": [], "serial_communication_hub": [], "slac": [], "solar_forecast": [], "sunspec_ac_meter": [], "sunspec_reader": [], "sunspec_scanner": [], "system": [], "tibber_price_forecast": [], "yeti_extras": [], "yeti_simulation_control": []}
             for test_control_module in self.test_control_modules:
-                connections["connector_1"].append(
-                    {"implementation_id": "evse", "module_id": test_control_module["evse_manager_id"]})
-                connections["test_control"].append(
-                    {"implementation_id": "main", "module_id": test_control_module["car_simulator_id"]})
-                if test_control_module["ocpp_id"]:
-                    connections["ocpp"].append(
-                        {"implementation_id": "main", "module_id": test_control_module["ocpp_id"]})
+                for module_id, test_control_module_connection in test_control_module.items():
+                    self.create_module_connection(module_id, test_control_module_connection, connections)
 
             user_config["active_modules"]["probe_module"] = {
                 "config_module": {"device": "auto"},
