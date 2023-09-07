@@ -15,6 +15,7 @@ from typing import Dict, List, Tuple
 
 
 import stringcase
+import jsonref
 
 
 class TypeParser:
@@ -25,51 +26,54 @@ class TypeParser:
     validated_type_defs = {}
 
     @classmethod
-    def parse_type_url(cls, type_url: str) -> Dict:
+    def parse_abs_type_url(cls, abs_type_url: str) -> Dict:
         """Parse a global type URL in the following format /filename#/typename."""
 
         type_dict = {
-            'type_relative_path': None,
+            'type_abs_path': None,
             'namespaced_type': None,
             'header_file': None,
             'type_name': None
         }
-        if not type_url.startswith('/'):
-            raise Exception('type_url: ' + type_url + ' needs to start with a "/".')
-        if '#/' not in type_url:
-            raise Exception('type_url: ' + type_url + ' needs to refer to a specific type with "#/TypeName".')
-        type_relative_path, prop_type = type_url.split('#/')
-        type_relative_path = Path(type_relative_path[1:])
+        if '#/' not in abs_type_url:
+            raise Exception('abs_type_url: ' + abs_type_url + ' needs to refer to a specific type with "#/TypeName".')
+        type_abs_path, prop_type = abs_type_url.split('#/')
+        type_abs_path = type_abs_path.replace('file://', '')
+        prop_type = prop_type.split('/')[-1]
 
-        namespaced_type = 'types::' + '::'.join(type_relative_path.parts) + f'::{prop_type}'
-        type_dict['type_relative_path'] = type_relative_path
+        if type_abs_path.count('/types/') != 1:
+            raise Exception(f'type_abs_url: \'{ abs_type_url }\' can not parse namespace')
+        namespace_parts = type_abs_path.split('/types/')[1].split('/')
+        namespace_parts[-1] = namespace_parts[-1].split('.')[0]
+        namespaced_type = 'types::' + '::'.join(namespace_parts) + f'::{prop_type}'
+        type_dict['type_abs_path'] = Path(type_abs_path)
         type_dict['namespaced_type'] = namespaced_type
         type_dict['type_name'] = prop_type
 
         return type_dict
 
     @classmethod
-    def does_type_exist(cls, type_url: str, json_type: str):
+    def does_type_exist(cls, type_abs_url: str, json_type: str):
         """Checks if the referenced type exists"""
-        if type_url not in TypeParser.all_types:
-            TypeParser.all_types[type_url] = TypeParser.parse_type_url(type_url=type_url)
-        type_dict = TypeParser.all_types[type_url]
-        type_path = helpers.resolve_everest_dir_path('types' / type_dict['type_relative_path'].with_suffix('.yaml'))
+        if type_abs_url not in TypeParser.all_types:
+            TypeParser.all_types[type_abs_url] = TypeParser.parse_type_abs_url(type_abs_url=type_abs_url)
+        type_dict = TypeParser.all_types[type_abs_url]
+        type_path = type_dict['type_abs_path']
         if not type_path or not type_path.exists():
             raise helpers.EVerestParsingException(
-                '$ref: ' + type_url + f' referenced type file "{type_path} does not exist.')
+                'resolved $ref: ' + type_abs_url + f' referenced type file "{type_path}" does not exist.')
         if type_path not in TypeParser.validated_type_defs:
             TypeParser.validated_type_defs[type_path] = helpers.load_validated_type_def(
                 type_path, TypeParser.validators['type'])
 
         if type_dict['type_name'] not in TypeParser.validated_type_defs[type_path]['types']:
-            raise helpers.EVerestParsingException('$ref: ' + type_url + ' referenced type "' +
+            raise helpers.EVerestParsingException('resolved $ref: ' + type_abs_url + ' referenced type "' +
                                                   type_dict['type_name'] + f'" does not exist in type file "{type_path}".')
 
         type_schema = TypeParser.validated_type_defs[type_path]['types'][type_dict['type_name']]
 
         if json_type != type_schema['type']:
-            raise helpers.EVerestParsingException('$ref: ' + type_url + ' referenced type "' +
+            raise helpers.EVerestParsingException('resolved $ref: ' + type_abs_url + ' referenced type "' +
                                                   type_dict['type_name'] + f'" in type file "{type_path}"' +
                                                   f' should be of type "{json_type}" but is of type: "' +
                                                   type_schema['type'] + '".')
@@ -84,8 +88,8 @@ class TypeParser:
         enums = []
 
         for type_name, type_properties in type_def.get('types', {}).items():
-            type_url = f'/{type_with_namespace["relative_path"]}#/{type_name}'
-            TypeParser.all_types[type_url] = TypeParser.parse_type_url(type_url=type_url)
+            type_abs_url = f'{type_with_namespace["abs_path"]}#/types/{type_name}'
+            TypeParser.all_types[type_abs_url] = TypeParser.parse_abs_type_url(abs_type_url=type_abs_url)
             try:
                 (_type_info, enum_info) = helpers.extended_build_type_info(type_name, type_properties, type_file=True)
                 if enum_info:
@@ -147,7 +151,7 @@ class TypeParser:
     def generate_type_info(cls, type_with_namespace, all_types) -> Tuple:
         """Generate type template data."""
         try:
-            type_def, last_mtime = TypeParser.load_type_definition(type_with_namespace['path'])
+            type_def, last_mtime = TypeParser.load_type_definition(type_with_namespace['abs_path'])
         except Exception as e:
             if not all_types:
                 raise
@@ -166,13 +170,13 @@ class TypeParser:
 
         types_parts = {'types': None}
 
-        output_path = output_dir / type_with_namespace['relative_path']
+        output_path = output_dir / type_with_namespace['rel_path']
         types_file = output_path.with_suffix('.hpp')
         output_path = output_path.parent
         output_path.mkdir(parents=True, exist_ok=True)
 
         namespaces = ['types']
-        namespaces.extend(type_with_namespace["relative_path"].parts)
+        namespaces.extend(type_with_namespace["rel_path"].parts)
 
         tmpl_data['info']['interface_name'] = f'{type_with_namespace["namespace"]}'
         tmpl_data['info']['namespace'] = namespaces
