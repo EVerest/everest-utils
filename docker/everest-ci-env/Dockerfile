@@ -29,7 +29,7 @@ RUN pip install \
     coloredlogs \
     pyyaml
 
-ARG EV_DEV_TOOLS_VERSION=v0.1.0
+ARG EV_DEV_TOOLS_VERSION=v0.1.4
 RUN pip install "$(echo "ev-dev-tools @ git+https://github.com/EVerest/everest-utils@${EV_DEV_TOOLS_VERSION}#subdirectory=ev-dev-tools")"
-ARG EDM_TOOL_VERSION=v0.5.4
+ARG EDM_TOOL_VERSION=v0.5.5
 RUN pip install "$(echo "edm-tool @ git+https://github.com/EVerest/everest-dev-environment@${EDM_TOOL_VERSION}#subdirectory=dependency_manager")"
