@@ -23,6 +23,7 @@ jobs:
       docker_registry: ghcr.io
       github_ref_before: ${{ github.event.before }}
       github_ref_after: ${{ github.event.after }}
+      github_ref: ${{ github.ref }}
     secrets:
       SA_GITHUB_PAT: ${{ secrets.SA_GITHUB_PAT }}
       SA_GITHUB_USERNAME: ${{ secrets.SA_GITHUB_USERNAME }}

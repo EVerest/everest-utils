@@ -12,6 +12,10 @@ on:
         required: true
         default: 'ghcr.io'
         type: string
+      github_ref:
+        description: 'Github ref of the change'
+        required: true
+        type: string
       github_ref_before:
         description: 'Github ref before the change'
         required: true
@@ -43,10 +47,22 @@ jobs:
         ref: ${{ inputs.github_ref_after }}
         token: ${{secrets.SA_GITHUB_PAT}}
         fetch-depth: 0
+    - name: Check before ref
+      id: check-before-ref
+      shell: python3 {0}
+      run: |
+        import os
+        ref = "${{ inputs.github_ref_before }}"
+        if ref == "0000000000000000000000000000000000000000":
+          ref = "main"
+        elif "${{ inputs.github_ref }}" != "refs/heads/main":
+          ref = "main"
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+          f.write(f'ref={ ref }\n')
     - name: Get changed files
       id: changed-files
       run: |
-        echo "changed_files=$(git diff --name-only ${{ inputs.github_ref_before }} ${{ inputs.github_ref_after }} | grep "^docker/${{inputs.image_name}}" | wc  -l)" >> $GITHUB_OUTPUT
+        echo "changed_files=$(git diff --name-only ${{ steps.check-before-ref.outputs.ref }} ${{ inputs.github_ref_after }} | grep "^docker/${{inputs.image_name}}" | wc  -l)" >> $GITHUB_OUTPUT
       working-directory: everest-utils
 
   build-and-push:
