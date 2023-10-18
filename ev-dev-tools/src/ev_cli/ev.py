@@ -20,8 +20,6 @@ import jinja2 as j2
 import argparse
 import stringcase
 from typing import List
-import jsonref, yaml
-
 
 # FIXME (aw): remove these global variables
 

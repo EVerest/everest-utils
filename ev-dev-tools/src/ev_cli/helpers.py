@@ -26,11 +26,8 @@ from uuid import uuid4
 
 import stringcase
 
-from pathlib import Path
-
 from referencing import Registry, Resource
 from referencing.exceptions import NoSuchResource
-import copy
 
 everest_dirs: List[Path] = []
 
@@ -468,7 +465,7 @@ def convert_refs(file_content: str, converting_method) -> str:
     result = result.removesuffix('\n')
     # print red
     if(conversions > 0):
-        print(f'\033[91mcustom type $refs starting with \'/\' are deprecated: {conversions} refs converted in {file_path}\033[0m')
+        print(f'\033[91mcustom type $refs starting with \'/\' are deprecated: {conversions} refs converted in file\033[0m')
     return result
 
 def make_ref_abs(ref: str, file_path: Path) -> str:

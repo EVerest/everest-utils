@@ -13,9 +13,7 @@ from . import helpers
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-
 import stringcase
-import jsonref
 
 
 class TypeParser:

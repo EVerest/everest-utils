@@ -10,10 +10,9 @@ author: andreas.heinrich@pionix.de
 
 from . import helpers
 
-from pathlib import Path
 from typing import Dict, List
 
-import yaml, jsonschema, jsonref
+import yaml, jsonref
 
 class ErrorParser:
     """Error parser class."""
