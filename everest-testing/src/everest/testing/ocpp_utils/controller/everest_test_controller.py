@@ -57,7 +57,7 @@ class EverestTestController(TestController):
 
         everest_ocpp_module_config = everest_config["active_modules"][self.ocpp_module_id]["config_module"]
 
-        occp_configuration_helper = LibOCPP16ConfigurationHelper() if self.ocpp_version == OCPPVersion.occp16 else LibOCPP201ConfigurationHelper()
+        occp_configuration_helper = LibOCPP16ConfigurationHelper() if self.ocpp_version == OCPPVersion.ocpp16 else LibOCPP201ConfigurationHelper()
 
         occp_configuration_helper.install_default_ocpp_certificates(
             source_certs_directory=self.everest_core.etc_path / 'certs',
@@ -80,7 +80,7 @@ class EverestTestController(TestController):
 
         self.adjust_everest_ocpp_module_config(everest_ocpp_module_config)
 
-        if self.ocpp_version == OCPPVersion.occp201:
+        if self.ocpp_version == OCPPVersion.ocpp201:
             occp_configuration_helper.create_temporary_ocpp_configuration_db(
                 libocpp_path=self.libocpp_path,
                 ocpp_configuration_file=Path(self.temp_ocpp_config_file.name),
@@ -100,9 +100,9 @@ class EverestTestController(TestController):
         self.initialize_nodered_sil()
 
     def get_ocpp_config_path(self, charge_point_config_path: str):
-        if self.ocpp_version == OCPPVersion.occp16:
+        if self.ocpp_version == OCPPVersion.ocpp16:
             ocpp_dir = self.everest_core.prefix_path / "share/everest/modules/OCPP"
-        elif self.ocpp_version == OCPPVersion.occp201:
+        elif self.ocpp_version == OCPPVersion.ocpp201:
             ocpp_dir = self.everest_core.prefix_path / "share/everest/modules/OCPP201"
         else:
             raise ValueError(f"unknown OCPP version {self.ocpp_version}")
@@ -116,11 +116,11 @@ class EverestTestController(TestController):
         everest_ocpp_module_config[
             "MessageLogPath"] = f"{TEST_LOGS_DIR}/{self.test_function_name}-{datetime.utcnow().isoformat()}"
         everest_ocpp_module_config["CertsPath"] = self.temp_ocpp_certs_dir.name
-        if self.ocpp_version == OCPPVersion.occp16:
+        if self.ocpp_version == OCPPVersion.ocpp16:
             everest_ocpp_module_config[
                 "UserConfigPath"] = self.temp_ocpp_user_config_file.name
             everest_ocpp_module_config["DatabasePath"] = self.temp_ocpp_database_dir.name
-        elif self.ocpp_version == OCPPVersion.occp201:
+        elif self.ocpp_version == OCPPVersion.ocpp201:
             everest_ocpp_module_config["CoreDatabasePath"] = self.temp_ocpp_database_dir.name
             everest_ocpp_module_config[
                 "DeviceModelDatabasePath"] = f"{self.temp_ocpp_database_dir.name}/device_model_storage.db"
@@ -142,8 +142,8 @@ class EverestTestController(TestController):
         assert "active_modules" in everest_config and self.ocpp_module_id in everest_config[
             "active_modules"], "OCPP Module is missing from EVerest config"
         ocpp_module = everest_config["active_modules"][self.ocpp_module_id]["module"]
-        assert (ocpp_module == "OCPP" and self.ocpp_version == OCPPVersion.occp16) or (
-                ocpp_module == "OCPP201" and self.ocpp_version == OCPPVersion.occp201), \
+        assert (ocpp_module == "OCPP" and self.ocpp_version == OCPPVersion.ocpp16) or (
+                ocpp_module == "OCPP201" and self.ocpp_version == OCPPVersion.ocpp201), \
             f"Invalid OCCP Module {ocpp_module} for provided OCCP version {self.ocpp_version}"
 
     def stop(self):
