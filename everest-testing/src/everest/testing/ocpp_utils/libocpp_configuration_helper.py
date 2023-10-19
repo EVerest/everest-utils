@@ -4,6 +4,7 @@ import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
 import subprocess
+import logging
 
 from everest.testing.ocpp_utils.common import OCPPVersion
 
@@ -54,11 +55,16 @@ class LibOCPP201ConfigurationHelper(LibOCPPConfigurationHelperBase):
         wd = libocpp_path / "config/v201"
         subprocess.run(
             f"python3 {libocpp_path / 'config/v201/init_device_model_db.py'} --out {target_directory / 'device_model_storage.db'} --schemas {libocpp_path / 'config/v201/component_schemas'}",
-            cwd=wd
+            cwd=wd,
+            check=True,
+            shell=True
         )
         subprocess.run(
             f"python3 {libocpp_path / 'config/v201/insert_device_model_config.py'} --config {ocpp_configuration_file} --db {target_directory / 'device_model_storage.db'}",
-            cwd=wd)
+            cwd=wd,
+            check=True,
+            shell=True
+        )
 
     def _get_occp_config(self, central_system_port, source_ocpp_config_file: Path):
         ocpp_config = json.loads(source_ocpp_config_file.read_text())
