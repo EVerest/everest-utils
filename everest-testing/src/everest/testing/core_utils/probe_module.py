@@ -58,8 +58,8 @@ class ProbeModule:
     def publish_variable(self, implementation_id: str, variable_name: str, value: dict | str):
         self._mod.publish_variable(implementation_id, variable_name, value)
 
-    def implement_evse_manager_command(self, implementation_id: str, command_name: str,
-                                       handler: Callable[[dict], dict]):
+    def implement_command(self, implementation_id: str, command_name: str,
+                          handler: Callable[[dict], dict]):
         self._mod.implement_command(implementation_id, command_name, handler)
 
     async def wait_to_be_ready(self, timeout=3):
