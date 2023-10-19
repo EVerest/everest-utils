@@ -13,7 +13,7 @@ from typing import Literal
 import yaml
 from paho.mqtt import client as mqtt_client
 
-from everest.testing.core_utils.everest_core import EverestCore
+from everest.testing.core_utils.everest_core import EverestCore, Connections
 from everest.testing.ocpp_utils.common import OCPPVersion
 from everest.testing.ocpp_utils.controller.test_controller_interface import TestController
 from everest.testing.ocpp_utils.libocpp_configuration_helper import \
@@ -48,7 +48,7 @@ class EverestTestController(TestController):
         self.mqtt_external_prefix = ""
         self.ocpp_module_id = ocpp_module_id
 
-    def start(self, central_system_port=None, standalone_module=None):
+    def start(self, central_system_port=None, standalone_module=None,  test_connections: Connections = None):
         logging.info(f"Central system port: {central_system_port}")
         # modify ocpp config with given central system port and modify everest-core config as well
         everest_config = yaml.safe_load(self.everest_core.everest_config_path.read_text())
@@ -94,7 +94,7 @@ class EverestTestController(TestController):
         logging.info(f"temp ocpp user config: {self.temp_ocpp_user_config_file.name}")
         logging.info(f"temp ocpp certs path: {self.temp_ocpp_certs_dir.name}")
 
-        self.everest_core.start(standalone_module=standalone_module)
+        self.everest_core.start(standalone_module=standalone_module, test_connections=test_connections)
 
         self.initialize_external_mqtt_client(self.everest_core.mqtt_external_prefix)
         self.initialize_nodered_sil()
