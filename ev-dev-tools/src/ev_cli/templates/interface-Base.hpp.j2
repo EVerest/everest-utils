@@ -57,11 +57,17 @@ public:
         );
     }
     {% endfor %}
+    // request clear functions for errors
+    {% for error in errors %}
+    void request_clear_all_{{ error.namespace }}_{{ error.name }}() {
+        _ev->request_clear_all_errors_of_type_of_module(_name, "{{ error.namespace }}/{{ error.name }}");
+    }
+    {% endfor %}
     void request_clear_error(const Everest::error::ErrorHandle& handle) {
-        _ev->request_clear_error(_name, handle);
+        _ev->request_clear_error_uuid(_name, handle);
     }
     void request_clear_all_errors() {
-        _ev->request_clear_all_errors(_name);
+        _ev->request_clear_all_errors_of_module(_name);
     }
     {% endif %}
 

@@ -463,7 +463,6 @@ def convert_refs(file_content: str, converting_method) -> str:
             line = f"{ parts[0] }:{ parts[1] }"
         result += f'{ line }\n'
     result = result.removesuffix('\n')
-    # print red
     if(conversions > 0):
         print(f'\033[91mcustom type $refs starting with \'/\' are deprecated: {conversions} refs converted in file\033[0m')
     return result
