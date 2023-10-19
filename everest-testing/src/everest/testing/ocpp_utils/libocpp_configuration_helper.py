@@ -53,7 +53,7 @@ class LibOCPP201ConfigurationHelper(LibOCPPConfigurationHelperBase):
                                                target_directory: Path):
         wd = libocpp_path / "config/v201"
         subprocess.run(
-            f"python3 {libocpp_path / '/config/v201/init_device_model_db.py'} --out {target_directory / 'device_model_storage.db'} --schemas {libocpp_path / 'config/v201/component_schemas'}",
+            f"python3 {libocpp_path / 'config/v201/init_device_model_db.py'} --out {target_directory / 'device_model_storage.db'} --schemas {libocpp_path / 'config/v201/component_schemas'}",
             cwd=wd
         )
         subprocess.run(
