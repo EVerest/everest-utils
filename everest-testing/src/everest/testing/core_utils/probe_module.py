@@ -88,13 +88,6 @@ class ProbeModule:
         self._mod.subscribe_variable(self._setup.connections[connection_id][0], var_name, lambda message, _queue=queue: _queue.put(message))
         return queue
         
-    def init_done(self):
-        """
-        Signal that the initialization of the probe module is done. Call this after you've implemented needed commands and set up subscriptions.
-        """
-        self._mod.init_done(self._ready)
-        logging.info("ProbeModule init done")
-        
     def _ready(self):
         """
         Internal function: callback triggered by the EVerest framework when all modules have been initialized
