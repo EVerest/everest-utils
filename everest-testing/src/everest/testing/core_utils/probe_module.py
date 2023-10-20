@@ -23,9 +23,10 @@ class ProbeModule:
         self._setup = m.say_hello()
         self._mod = m
         self._ready_event = asyncio.Event()
-        
+
         # subscribe to session events
-        logging.info(self._setup.connections)
+        m.init_done(self._ready)
+        logging.info("Probe module initialized")
         
     def call_command(self, connection_id: str, command_name: str, args: dict) -> Any:
         """
