@@ -163,6 +163,11 @@ class ChargePoint201(cp):
     def on_sign_certificate(self, **kwargs):
         return call_result.SignCertificatePayload(status=GenericStatusType.accepted)
 
+    @on(Action.Get15118EVCertificate)
+    def on_get_15118_ev_certificate(self, **kwargs):
+        return call_result.Get15118EVCertificatePayload(status=GenericStatusType.accepted,
+                                                        exi_response="")
+
     async def set_variables_req(self, **kwargs):
         payload = call.SetVariablesPayload(**kwargs)
         return await self.call(payload)
