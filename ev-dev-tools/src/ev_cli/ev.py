@@ -273,6 +273,10 @@ def generate_module_files(rel_mod_dir, update_flag):
                 'id': '75ac1216-19eb-4182-a85c-820f1fc2c091',
                 'content': '// insert your custom include headers here'
             },
+            'initializer_list': {
+                'id': '7670c578-7b3a-4be3-8aa4-8a75976e3e56',
+                'content': "// replace this line with a single comma if you want to add custom stuff\n\n// insert your custom stuff to the initializer list here"
+            },
             'public_defs': {
                 'id': '8ea32d28-373f-4c90-ae5e-b4fcc74e2a61',
                 'content': '// insert your public definitions here'
@@ -300,6 +304,10 @@ def generate_module_files(rel_mod_dir, update_flag):
             'add_headers': {
                 'id': '4bf81b14-a215-475c-a1d3-0a484ae48918',
                 'content': '// insert your custom include headers here'
+            },
+            'initializer_list': {
+                'id': '2d974162-d3a8-46d3-915d-4d6964a7a6d2',
+                'content': "// replace this line with a single comma if you want to add custom stuff\n\n// insert your custom stuff to the initializer list here"
             },
             'public_defs': {
                 'id': '1fce4c5e-0ab8-41bb-90f7-14277703d2ac',

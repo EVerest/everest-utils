@@ -3,7 +3,7 @@
 #ifndef {{ info.hpp_guard }}
 #define {{ info.hpp_guard }}
 
-{{ print_template_info('2', 'marked regions will be kept') }}
+{{ print_template_info('3', 'marked regions will be kept') }}
 
 #include "{{ info.ld_ev_header }}"
 
@@ -68,6 +68,7 @@ public:
         r_{{ requirement.id }}(std::move(r_{{ requirement.id }})),
         {% endfor %}
         config(config)
+        {{ insert_block(info.blocks.initializer_list, indent=8) }}
     {};
 
     {% if info.enable_external_mqtt %}

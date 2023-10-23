@@ -3,7 +3,7 @@
 #ifndef {{ info.hpp_guard }}
 #define {{ info.hpp_guard }}
 
-{{ print_template_info('3', 'marked regions will be kept') }}
+{{ print_template_info('4', 'marked regions will be kept') }}
 
 #include <{{ info.base_class_header }}>
 
@@ -27,6 +27,7 @@ public:
         {{ info.class_parent }}(ev, "{{ info.interface_implementation_id }}"),
         mod(mod),
         config(config)
+        {{ insert_block(info.blocks.initializer_list, indent=8) }}
     {};
 
     {{ insert_block(info.blocks.public_defs, indent=4) }}
