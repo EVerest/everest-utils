@@ -174,12 +174,12 @@ class TypeParser:
         output_path.mkdir(parents=True, exist_ok=True)
 
         namespaces = ['types']
-        namespaces.extend(type_with_namespace["rel_path"].parts)
+        namespaces.extend(type_with_namespace['rel_path'].parts)
 
         tmpl_data['info']['interface_name'] = f'{type_with_namespace["namespace"]}'
         tmpl_data['info']['namespace'] = namespaces
         tmpl_data['info']['hpp_guard'] = 'TYPES_' + helpers.snake_case(
-            ''.join(type_with_namespace["uppercase_path"])).upper() + '_TYPES_HPP'
+            ''.join(type_with_namespace['uppercase_path'])).upper() + '_TYPES_HPP'
 
         types_parts['types'] = {
             'path': types_file,

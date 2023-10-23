@@ -614,9 +614,9 @@ def helpers_json2yaml(args):
 
 
 def helpers_convert_refs(args):
-    print(f"Converting references in yaml file {args.input} and writing to {args.output}")
+    print(f'Converting references in yaml file {args.input} and writing to {args.output}')
     if (not args.input.exists()):
-        raise Exception(f"Input file {args.input} does not exist")
+        raise Exception(f'Input file {args.input} does not exist')
     if (not args.output.parent.exists()):
         args.output.parent.mkdir(parents=True, exist_ok=False)
     base_path = args.base_path
@@ -637,7 +637,7 @@ def list_types_with_namespace(types=None) -> List:
         types = []
         for everest_dir in everest_dirs:
             types_dir = everest_dir / 'types'
-            types += list(types_dir.glob("**/*.yaml"))
+            types += list(types_dir.glob('**/*.yaml'))
 
     types_with_namespace = []
     for type_path in types:
@@ -666,7 +666,7 @@ def list_types_with_namespace(types=None) -> List:
 
 
 def types_genhdr(args):
-    print("Generating global type headers.")
+    print('Generating global type headers.')
     output_dir = Path(args.output_dir).resolve() if args.output_dir else work_dir / \
         'build/generated/generated/types'
 
@@ -698,17 +698,17 @@ def main():
 
     common_parser = argparse.ArgumentParser(add_help=False)
 
-    common_parser.add_argument("--work-dir", "-wd", type=str,
+    common_parser.add_argument('--work-dir', '-wd', type=str,
                                help='work directory containing the manifest definitions (default: .)', default=str(Path.cwd()))
-    common_parser.add_argument("--everest-dir", "-ed", nargs='*',
+    common_parser.add_argument('--everest-dir', '-ed', nargs='*',
                                help='everest directory containing the interface definitions (default: .)', default=[str(Path.cwd())])
-    common_parser.add_argument("--schemas-dir", "-sd", type=str,
+    common_parser.add_argument('--schemas-dir', '-sd', type=str,
                                help='everest framework directory containing the schema definitions (default: ../everest-framework/schemas)',
                                default=str(Path.cwd() / '../everest-framework/schemas'))
-    common_parser.add_argument("--clang-format-file", type=str, default=str(Path.cwd()),
+    common_parser.add_argument('--clang-format-file', type=str, default=str(Path.cwd()),
                                help='Path to the directory, containing the .clang-format file (default: .)')
-    common_parser.add_argument("--disable-clang-format", action='store_true', default=False,
-                               help="Set this flag to disable clang-format")
+    common_parser.add_argument('--disable-clang-format', action='store_true', default=False,
+                               help='Set this flag to disable clang-format')
 
     subparsers = parser.add_subparsers(metavar='<command>', help='available commands', required=True)
     parser_mod = subparsers.add_parser('module', aliases=['mod'], help='module related actions')

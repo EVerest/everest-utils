@@ -88,13 +88,13 @@ def create_dummy_result(json_type) -> str:
 
 
 cpp_type_map = {
-    "null": "std::nullptr_t",  # FIXME (aw): who gets the null, json? or the variant
-    "integer": "int",
-    "number": "double",
-    "string": "std::string",
-    "boolean": "bool",
-    "array": "Array",
-    "object": "Object",
+    'null': 'std::nullptr_t',  # FIXME (aw): who gets the null, json? or the variant
+    'integer': 'int',
+    'number': 'double',
+    'string': 'std::string',
+    'boolean': 'bool',
+    'array': 'Array',
+    'object': 'Object',
 }
 
 
@@ -202,7 +202,7 @@ def parse_type_ref(ref: str, prop_type, prop_info: Dict) -> Tuple[str, dict]:
 
     type_path = type_dict['type_abs_path'].with_suffix('.yaml')
     if not type_path or not type_path.exists():
-        raise EVerestParsingException('$ref: ' + ref + f' referenced type file "{type_path} does not exist.')
+        raise EVerestParsingException('$ref: ' + ref + f' referenced type file "{type_path}" does not exist.')
 
     (td, _mod) = TypeParser.load_type_definition(type_path)
     if 'types' in td and type_dict['type_name'] in td['types']:
@@ -213,7 +213,7 @@ def parse_type_ref(ref: str, prop_type, prop_info: Dict) -> Tuple[str, dict]:
     prop_info['prop']['type'] = prop_type
     prop_info['type_dict'] = type_dict
 
-    type_relative_path = Path(type_dict["type_abs_path"].as_posix().split('/types/')[1])
+    type_relative_path = Path(type_dict['type_abs_path'].as_posix().split('/types/')[1])
     path = Path('generated/types') / \
         type_relative_path.with_suffix('.hpp')
     type_headers.add(path.as_posix())
@@ -299,10 +299,10 @@ def parse_object(ob_name: str, json_schema: Dict, type_file: bool):
             type_path = type_dict['type_abs_path']
             if not type_path or not type_path.exists():
                 raise EVerestParsingException(
-                    '$ref: ' + json_schema['$ref'] + f' referenced type file "{type_path} does not exist.')
+                    '$ref: ' + json_schema['$ref'] + f' referenced type file "{type_path}" does not exist.')
             TypeParser.does_type_exist(type_abs_url=json_schema['$ref'], json_type=json_schema['type'])
 
-            type_relative_path = Path(type_dict["type_abs_path"].as_posix().split('/types/')[1])
+            type_relative_path = Path(type_dict['type_abs_path'].as_posix().split('/types/')[1])
             prop_type = type_dict['namespaced_type']
             ob_dict['name'] = prop_type
             path = Path('generated/types') / \
@@ -355,7 +355,7 @@ def extended_build_type_info(name: str, info: dict, type_file=False) -> Tuple[di
             type_path = type_dict['type_abs_path'].with_suffix('.yaml')
             if not type_path or not type_path.exists():
                 raise EVerestParsingException('$ref: ' + info['$ref'] +
-                                              f' referenced type file "{type_path} does not exist.')
+                                              f' referenced type file "{type_path}" does not exist.')
 
             (td, _mod) = TypeParser.load_type_definition(type_path)
             if 'types' in td and type_dict['type_name'] in td['types']:
@@ -369,7 +369,7 @@ def extended_build_type_info(name: str, info: dict, type_file=False) -> Tuple[di
                     }
 
                     type_info['enum_type'] = enum_info['enum_type']
-            type_relative_path = Path(type_dict["type_abs_path"].as_posix().split('/types/')[1])
+            type_relative_path = Path(type_dict['type_abs_path'].as_posix().split('/types/')[1])
             path = Path('generated/types') / \
                 type_relative_path.with_suffix('.hpp')
             type_headers.add(path.as_posix())
@@ -389,7 +389,7 @@ def extended_build_type_info(name: str, info: dict, type_file=False) -> Tuple[di
             type_path = type_dict['type_abs_path'].with_suffix('.yaml')
             if not type_path or not type_path.exists():
                 raise EVerestParsingException(
-                    '$ref: ' + info['items']['$ref'] + f' referenced type file "{type_path} does not exist.')
+                    '$ref: ' + info['items']['$ref'] + f' referenced type file "{type_path}" does not exist.')
 
             (td, _mod) = TypeParser.load_type_definition(type_path)
             if 'types' in td and type_dict['type_name'] in td['types']:
@@ -397,7 +397,7 @@ def extended_build_type_info(name: str, info: dict, type_file=False) -> Tuple[di
                 if 'enum' in local_type_info:
                     type_info['array_type_contains_enum'] = True
                 type_info['array_type'] = type_dict['namespaced_type']
-            type_relative_path = Path(type_dict["type_abs_path"].as_posix().split('/types/')[1])
+            type_relative_path = Path(type_dict['type_abs_path'].as_posix().split('/types/')[1])
             path = Path('generated/types') / \
                 type_relative_path.with_suffix('.hpp')
             type_headers.add(path.as_posix())
@@ -415,9 +415,9 @@ def load_validators(schema_path: Path):
             schema = yaml.safe_load((schema_path / f'{filename}.yaml').read_text())
             def retrieve_yaml(path: str):
                 uri = f'{ schema_path.as_uri() }/{ path }'
-                if not uri.startswith("file://") or not uri.endswith(".yaml"):
+                if not uri.startswith('file://') or not uri.endswith('.yaml'):
                     raise NoSuchResource(ref=uri)
-                path = Path(uri.removeprefix("file://"))
+                path = Path(uri.removeprefix('file://'))
                 contents = yaml.safe_load(path.read_text())
                 return Resource.from_contents(contents)
 
@@ -440,19 +440,19 @@ def load_validators(schema_path: Path):
 def convert_in_interface_file(ref: str) -> str:
     file_name, type_name = ref.split('#/')
     file_name = file_name[1:]
-    return f" '../types/{ file_name }.yaml#/types/{ type_name }'"
+    return f' \'../types/{ file_name }.yaml#/types/{ type_name }\''
 
 
 def convert_in_types_file(ref: str) -> str:
     file_name, type_name = ref.split('#/')
     file_name = file_name[1:]
-    return f" './{ file_name }.yaml#/types/{ type_name }'"
+    return f' \'./{ file_name }.yaml#/types/{ type_name }\''
 
 
 def convert_refs(file_content: str, converting_method) -> str:
     conversions = 0
     result = ''
-    lines = file_content.split("\n")
+    lines = file_content.split('\n')
     for line in lines:
         if '$ref' in line:
             parts = line.split(':')
@@ -460,7 +460,7 @@ def convert_refs(file_content: str, converting_method) -> str:
             if ref.startswith('/'):
                 parts[1] = converting_method(ref)
                 conversions += 1
-            line = f"{ parts[0] }:{ parts[1] }"
+            line = f'{ parts[0] }:{ parts[1] }'
         result += f'{ line }\n'
     result = result.removesuffix('\n')
     if(conversions > 0):
@@ -477,18 +477,18 @@ def make_ref_abs(ref: str, file_path: Path) -> str:
     file_name, yaml_key_path = ref.split('#/')
     path = file_path.parent / file_name
     uri = path.resolve().as_uri()
-    return f"{ uri }#/{ yaml_key_path }"
+    return f'{ uri }#/{ yaml_key_path }'
 
 
 def use_abs_refs(file_content: str, file_path: Path) -> str:
     result = ''
-    lines = file_content.split("\n")
+    lines = file_content.split('\n')
     for line in lines:
         if '$ref' in line:
             parts = line.split(':', 1)
             ref = parts[1].strip().replace('\'', '').replace('\"', '')
             ref = make_ref_abs(ref, file_path)
-            line = f"{ parts[0] }: '{ ref }'"
+            line = f'{ parts[0] }: \'{ ref }\''
         result += f'{ line }\n'
     result = result.removesuffix('\n')
     return result
@@ -516,16 +516,16 @@ def load_validated_interface_def(if_def_path: Path, validator):
         # validating interface
         validator.validate(resolved_if_def)
         # validate var/cmd subparts
-        if "vars" in if_def:
-            for _var_name, var_def in if_def["vars"].items():
+        if 'vars' in if_def:
+            for _var_name, var_def in if_def['vars'].items():
                 jsonschema.Draft7Validator.check_schema(var_def)
-        if "cmds" in if_def:
-            for _cmd_name, cmd_def in if_def["cmds"].items():
-                if "arguments" in cmd_def:
-                    for _arg_name, arg_def in cmd_def["arguments"].items():
+        if 'cmds' in if_def:
+            for _cmd_name, cmd_def in if_def['cmds'].items():
+                if 'arguments' in cmd_def:
+                    for _arg_name, arg_def in cmd_def['arguments'].items():
                         jsonschema.Draft7Validator.check_schema(arg_def)
-                if "result" in cmd_def:
-                    jsonschema.Draft7Validator.check_schema(cmd_def["result"])
+                if 'result' in cmd_def:
+                    jsonschema.Draft7Validator.check_schema(cmd_def['result'])
     except OSError as err:
         raise Exception(f'Could not open interface definition file {err.filename}: {err.strerror}') from err
     except jsonschema.ValidationError as err:
