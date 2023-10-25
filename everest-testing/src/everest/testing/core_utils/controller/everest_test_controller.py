@@ -82,5 +82,6 @@ class EverestTestController(TestController):
         self._mqtt_client.publish(topic, payload)
 
     def _destroy_mqtt_client(self):
-        self._mqtt_client.disconnect()
-        self._mqtt_client = None
+        if self._mqtt_client:
+            self._mqtt_client.disconnect()
+            self._mqtt_client = None

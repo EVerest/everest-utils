@@ -77,7 +77,7 @@ async def central_system_v16(request, test_config: OcppTestConfiguration):
                                     test_config.certificate_info.csms_passphrase)
     else:
         ssl_context = None
-    cs = CentralSystem(None,
+    cs = CentralSystem(test_config.csms_port,
                        test_config.charge_point_info.charge_point_id,
                        ocpp_version='ocpp1.6')
     await cs.start(ssl_context)
@@ -128,7 +128,7 @@ async def central_system_v201(request, test_config: OcppTestConfiguration):
                                     test_config.certificate_info.csms_passphrase)
     else:
         ssl_context = None
-    cs = CentralSystem(None,
+    cs = CentralSystem(test_config.csms_port,
                        test_config.charge_point_info.charge_point_id,
                        ocpp_version='ocpp2.0.1')
 
@@ -146,12 +146,7 @@ async def central_system_v201(request, test_config: OcppTestConfiguration):
 async def central_system_v16_standalone(request, central_system_v16: CentralSystem, test_controller: EverestTestController):
     """Fixture for standalone central system. Requires central_system_v16 and test_controller. Starts test_controller immediately
     """
-    marker = request.node.get_closest_marker('standalone_module')
-    if marker is None:
-        test_controller.start(central_system_v16.port)
-    else:
-        standalone_module = marker.args[0]
-        test_controller.start(central_system_v16.port, standalone_module)
+    test_controller.start()
     yield central_system_v16
 
 
@@ -161,7 +156,7 @@ async def charge_point_v16(request, central_system_v16: CentralSystem, test_cont
     """
     marker = request.node.get_closest_marker('standalone_module')
     if marker is None:
-        test_controller.start(central_system_v16.port)
+        test_controller.start() # standalone_module = self._probe_config.module_id
     else:
         raise Exception("Using a standalone module with the charge_point_v16 fixture is not supported, please use central_system_v16_standalone")
     cp = await central_system_v16.wait_for_chargepoint()

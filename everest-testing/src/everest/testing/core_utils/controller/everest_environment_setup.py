@@ -2,7 +2,7 @@
 # Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, Dict, List, Union
 
@@ -40,7 +40,7 @@ class EverestEnvironmentCoreConfiguration:
 
 @dataclass
 class EverestEnvironmentProbeModuleConfiguration:
-    connections: Dict[str, List[Requirement]]
+    connections: Dict[str, List[Requirement]] = field(default_factory=dict)
     module_id: str = "probe"
 
 
@@ -59,11 +59,15 @@ class EverestTestEnvironmentSetup:
     def __init__(self,
                  core_config: EverestEnvironmentCoreConfiguration,
                  ocpp_config: Optional[EverestEnvironmentOCPPConfiguration] = None,
-                 probe_config: Optional[EverestEnvironmentProbeModuleConfiguration] = None
+                 probe_config: Optional[EverestEnvironmentProbeModuleConfiguration] = None,
+                 standalone_module: Optional[str] = None
                  ) -> None:
         self._core_config = core_config
         self._ocpp_config = ocpp_config
         self._probe_config = probe_config
+        self._standalone_module = standalone_module
+        if not self._standalone_module and self._probe_config:
+            self._standalone_module = self._probe_config.module_id
         self._everest_core = None
 
     def setup_environment(self, tmp_path: Path):
@@ -72,14 +76,10 @@ class EverestTestEnvironmentSetup:
 
         configuration_visitors = self._create_everest_configuration_visitors(temporary_paths)
 
-        standalone_module = None
-        if self._probe_config:
-            standalone_module = self._probe_config.module_id
-
         self._everest_core = EverestCore(self._core_config.everest_core_path,
                                          self._core_config.template_everest_config_path,
                                          everest_configuration_adjustment_visitors=configuration_visitors,
-                                         standalone_module=standalone_module)
+                                         standalone_module=self._standalone_module)
 
         if self._ocpp_config:
             self._setup_libocpp_configuration(
@@ -117,7 +117,7 @@ class EverestTestEnvironmentSetup:
             ocpp_paths = OCPPModulePaths16(
                 ChargePointConfigPath=str(temporary_paths.ocpp_config_file),
                 MessageLogPath=str(temporary_paths.ocpp_message_log_directory),
-                CertsPath=str(temporary_paths.ocpp_user_config_file),
+                CertsPath=str(temporary_paths.ocpp_certs_dir),
                 UserConfigPath=str(temporary_paths.ocpp_user_config_file),
                 DatabasePath=str(temporary_paths.ocpp_database_dir)  # self.temp_ocpp_database_dir.name
             )
@@ -125,9 +125,9 @@ class EverestTestEnvironmentSetup:
             ocpp_paths = OCPPModulePaths201(
                 ChargePointConfigPath=str(temporary_paths.ocpp_config_file),
                 MessageLogPath=str(temporary_paths.ocpp_message_log_directory),
-                CertsPath=str(temporary_paths.ocpp_user_config_file),
-                CoreDatabasePath=str(temporary_paths.ocpp_user_config_file),  # self.temp_ocpp_database_dir.name
-                DeviceModelDatabasePath=str(temporary_paths.ocpp_user_config_file),
+                CertsPath=str(temporary_paths.ocpp_certs_dir),
+                CoreDatabasePath=str(temporary_paths.ocpp_database_dir),
+                DeviceModelDatabasePath=str(temporary_paths.ocpp_database_dir / "device_model_storage.db"),
             )
         else:
             raise ValueError(f"unknown  ocpp version {self._ocpp_config.ocpp_version}")
