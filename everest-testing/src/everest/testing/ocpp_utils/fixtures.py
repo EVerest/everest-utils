@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
-
+import logging
 import sys
 import os
 from functools import wraps
+from typing import Optional
 from unittest.mock import Mock
 
 import pytest
@@ -21,8 +22,10 @@ from ocpp.routing import on
 from pyftpdlib import servers
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
-from everest.testing.ocpp_utils.controller.test_controller_interface import TestController
-from everest.testing.ocpp_utils.controller.everest_test_controller import EverestTestController
+
+from everest.testing.core_utils.controller.everest_environment_setup import EverestTestEnvironmentSetup, \
+    EverestEnvironmentCoreConfiguration, EverestEnvironmentOCPPConfiguration, EverestEnvironmentProbeModuleConfiguration
+from everest.testing.core_utils.controller.everest_test_controller import EverestTestController
 from everest.testing.ocpp_utils.central_system import CentralSystem
 from everest.testing.ocpp_utils.charge_point_utils import TestUtility, OcppTestConfiguration
 
@@ -30,26 +33,33 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
 
 
 @pytest.fixture
-def test_controller(request, test_config: OcppTestConfiguration) -> TestController:
-    """Fixture that references the the test_controller that can be used for
-    control events for the test cases.
-    """
+def ocpp_config(request, test_config: OcppTestConfiguration):
     ocpp_version = request.node.get_closest_marker("ocpp_version")
     if ocpp_version:
         ocpp_version = request.node.get_closest_marker("ocpp_version").args[0]
     else:
         ocpp_version = "ocpp1.6"
 
-    everest_core_path = Path(request.config.getoption("--everest-prefix"))
-    marker = request.node.get_closest_marker("everest_core_config")
-    if marker is None:
-        config_path = test_config.config_path
-    else:
-        config_path = Path(marker.args[0])
+    ocpp_config_marker = request.node.get_closest_marker("ocpp_config")
 
-    libocpp_path = Path(request.config.getoption("--libocpp"))
-    test_controller = EverestTestController(
-        everest_core_path, libocpp_path, config_path, test_config.charge_point_info.charge_point_id, ocpp_version, request.function.__name__)
+    return EverestEnvironmentOCPPConfiguration(
+        central_system_port=test_config.csms_port,
+        ocpp_version=ocpp_version,
+        libocpp_path=Path(request.config.getoption("--libocpp")),
+        template_ocpp_config=Path(ocpp_config_marker) if ocpp_config_marker else None
+    )
+
+
+
+@pytest.fixture
+def test_controller(request, tmp_path, everest_core, test_config: OcppTestConfiguration) -> EverestTestController:
+    """Fixture that references the test_controller that can be used for
+    control events for the test cases.
+    """
+
+
+    test_controller = EverestTestController(everest_core=everest_core)
+
     yield test_controller
     test_controller.stop()
 
@@ -133,7 +143,7 @@ async def central_system_v201(request, test_config: OcppTestConfiguration):
 
 
 @pytest_asyncio.fixture
-async def central_system_v16_standalone(request, central_system_v16: CentralSystem, test_controller: TestController):
+async def central_system_v16_standalone(request, central_system_v16: CentralSystem, test_controller: EverestTestController):
     """Fixture for standalone central system. Requires central_system_v16 and test_controller. Starts test_controller immediately
     """
     marker = request.node.get_closest_marker('standalone_module')
@@ -146,7 +156,7 @@ async def central_system_v16_standalone(request, central_system_v16: CentralSyst
 
 
 @pytest_asyncio.fixture
-async def charge_point_v16(request, central_system_v16: CentralSystem, test_controller: TestController):
+async def charge_point_v16(request, central_system_v16: CentralSystem, test_controller: EverestTestController):
     """Fixture for ChargePoint16. Requires central_system_v16 and test_controller. Starts test_controller immediately
     """
     marker = request.node.get_closest_marker('standalone_module')
@@ -161,7 +171,7 @@ async def charge_point_v16(request, central_system_v16: CentralSystem, test_cont
 
 
 @pytest_asyncio.fixture
-async def charge_point_v201(central_system_v201: CentralSystem, test_controller: TestController):
+async def charge_point_v201(central_system_v201: CentralSystem, test_controller: EverestTestController):
     """Fixture for ChargePoint16. Requires central_system_v201 and test_controller. Starts test_controller immediately
     """
     test_controller.start(central_system_v201.port)

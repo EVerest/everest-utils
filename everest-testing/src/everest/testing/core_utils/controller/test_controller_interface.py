@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+from abc import ABC, abstractmethod
 
-class TestController:
+
+class TestController(ABC):
 
     """This abstract class defines methods that are used within the test cases
     and should be implemented by you for your specific chargepoint and test
@@ -9,6 +11,7 @@ class TestController:
     chargepoint and an electric vehicle.
     """
 
+    @abstractmethod
     def start(self):
         """
         This method starts the chargepoint. This includes
@@ -16,6 +19,7 @@ class TestController:
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def stop(self):
         """
         This method stops the chargepoint (similiar to power off). This includes
@@ -23,29 +27,35 @@ class TestController:
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def plug_in(self, connector_id):
         """
         Plug in of an electric vehicle to the chargepoint.
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def plug_in_ac_iso(self, payment_type, connector_id):
         """
         Plug in of an electric vehicle to the chargepoint using AC ISO15118.
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def plug_out(self):
         """
         Plug out of an electric vehicle from the chargepoint.
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def swipe(self, token):
         """
         Swipe the given RFID card at the RFID reader of the chargepoint.
         """
 
+
+    @abstractmethod
     def connect_websocket(self):
         """
         Connect the OCPP client. This method is only used after a disconnect_websocket call
@@ -53,12 +63,14 @@ class TestController:
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def disconnect_websocket(self):
         """
         Disconnects the OCPP client from the CSMS. The chargepoint still is powered up.
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def rcd_error(self):
         """
         Produces an RCD Error.
