@@ -1,10 +1,9 @@
-from abc import abstractmethod, ABC
 from copy import deepcopy
 from dataclasses import dataclass, asdict
-from typing import Union, Dict, List
+from typing import Union, Dict
 
 from everest.testing.core_utils.common import OCPPVersion
-from everest.testing.core_utils.everst_configuration_visitor import EverestConfigAdjustmentVisitor
+from everest.testing.core_utils.configuration.everest_configuration_visitors.everst_configuration_visitor import EverestConfigAdjustmentVisitor
 
 
 
@@ -26,7 +25,8 @@ class OCPPModulePaths201(OCPPModuleConfigurationBase):
 
 
 class OCPPModuleConfigurationVisitor(EverestConfigAdjustmentVisitor):
-    """ Class to dynamically the configuration of an EVerest OCPP Module
+    """ Adjusts the Everest configuration by manipulating the OCPP module configuration to use proper (temporary test) paths.
+
     """
 
 
@@ -52,22 +52,10 @@ class OCPPModuleConfigurationVisitor(EverestConfigAdjustmentVisitor):
         module_config["config_module"] = {**module_config["config_module"],
                                           **asdict(self._ocpp_paths)}
 
-        # paths["ChargePointConfigPath"] = self.temp_ocpp_config_file.name
-        # paths["MessageLogPath"] = f"{TEST_LOGS_DIR}/{self.test_function_name}-{datetime.utcnow().isoformat()}"
-        # paths["CertsPath"] = self.temp_ocpp_certs_dir.name
-        #
-        # if self.ocpp_version == OCPPVersion.ocpp16:
-        #     paths["UserConfigPath"] = self.temp_ocpp_user_config_file.name
-        #     paths["DatabasePath"] = self.temp_ocpp_database_dir.name
-        # elif self.ocpp_version == OCPPVersion.ocpp201:
-        #     paths["CoreDatabasePath"] = self.temp_ocpp_database_dir.name
-        #     paths["DeviceModelDatabasePath"] = f"{self.temp_ocpp_database_dir.name}/device_model_storage.db"
-
         return adjusted_config
 
-
     def _verify_module_config(self, everest_config):
-        """ Get reference to OCPP module config"""
+        """ Verify the provided config fits the provided OCPP version """
         assert "active_modules" in everest_config and self._ocpp_module_id in everest_config[
             "active_modules"], "OCPP Module is missing from EVerest config"
         ocpp_module = everest_config["active_modules"][self._ocpp_module_id]["module"]

@@ -9,12 +9,13 @@ from typing import Optional, Dict, List, Union
 import yaml
 
 from everest.testing.core_utils.common import OCPPVersion
-from everest.testing.ocpp_utils.ocpp_module_configuration_visitor import OCPPModuleConfigurationVisitor, \
+from everest.testing.core_utils.configuration.everest_configuration_visitors.ocpp_module_configuration_visitor import OCPPModuleConfigurationVisitor, \
     OCPPModulePaths16, OCPPModulePaths201
+from everest.testing.core_utils.configuration.everest_configuration_visitors.probe_module_configuration_visitor import \
+    ProbeModuleConfigurationVisitor
 
 from everest.testing.core_utils.everest_core import EverestCore, Requirement
-from everest.testing.core_utils.probe_module import ProbeModuleConfigurationVisitor
-from everest.testing.ocpp_utils.libocpp_configuration_helper import \
+from everest.testing.core_utils.configuration.libocpp_configuration_helper import \
     LibOCPP201ConfigurationHelper, LibOCPP16ConfigurationHelper
 
 logging.basicConfig(level=logging.DEBUG)
@@ -44,17 +45,28 @@ class EverestEnvironmentProbeModuleConfiguration:
     module_id: str = "probe"
 
 
-@dataclass
-class EverestEnvironmentTemporaryPaths:
-    """ Paths of the temporary configuration files / data """
-    ocpp_config_file: Path
-    ocpp_user_config_file: Path
-    ocpp_database_dir: Path
-    ocpp_certs_dir: Path
-    ocpp_message_log_directory: Path
-
-
 class EverestTestEnvironmentSetup:
+    """
+     Class that prepares the environment of EVerest core and creates the EverestCore instance of a test.
+
+     For this:
+     - receives all settings / configurations required at initialization
+     - calling setup_environment:
+        - creates required temporary paths / file structures
+        - configures EverestCore including adjustments of the EverestCore configuration (injecting temporary paths ...)
+        - sets up special modules (initiates the setup of OCPPlib such as parsing the device model database)
+        - creates the EverestCore instance
+
+    """
+
+    @dataclass
+    class _EverestEnvironmentTemporaryPaths:
+        """ Paths of the temporary configuration files / data """
+        ocpp_config_file: Path
+        ocpp_user_config_file: Path
+        ocpp_database_dir: Path
+        ocpp_certs_dir: Path
+        ocpp_message_log_directory: Path
 
     def __init__(self,
                  core_config: EverestEnvironmentCoreConfiguration,
@@ -92,7 +104,7 @@ class EverestTestEnvironmentSetup:
         assert self._everest_core, "Everest Core not initialized; run 'setup_environment' first"
         return self._everest_core
 
-    def _create_temporary_directory_structure(self, tmp_path: Path) -> EverestEnvironmentTemporaryPaths:
+    def _create_temporary_directory_structure(self, tmp_path: Path) -> _EverestEnvironmentTemporaryPaths:
         ocpp_config_dir = tmp_path / "ocpp_config"
         ocpp_config_dir.mkdir(exist_ok=True)
         ocpp_certs_dir = ocpp_config_dir / "certs"
@@ -102,7 +114,7 @@ class EverestTestEnvironmentSetup:
 
         logging.info(f"temp ocpp config files directory: {ocpp_config_dir}")
 
-        return EverestEnvironmentTemporaryPaths(
+        return self._EverestEnvironmentTemporaryPaths(
             ocpp_config_file=ocpp_config_dir / "config.json",
             ocpp_user_config_file=ocpp_config_dir / "user_config.json",
             ocpp_database_dir=ocpp_config_dir,
@@ -111,7 +123,7 @@ class EverestTestEnvironmentSetup:
         )
 
     def _create_ocpp_module_configuration_visitor(self,
-                                                  temporary_paths: EverestEnvironmentTemporaryPaths) -> OCPPModuleConfigurationVisitor:
+                                                  temporary_paths: _EverestEnvironmentTemporaryPaths) -> OCPPModuleConfigurationVisitor:
 
         if self._ocpp_config.ocpp_version == OCPPVersion.ocpp16:
             ocpp_paths = OCPPModulePaths16(
@@ -139,7 +151,7 @@ class EverestTestEnvironmentSetup:
         return occp_module_configuration_helper
 
     def _setup_libocpp_configuration(self, source_certs_directory: Path,
-                                     temporary_paths: EverestEnvironmentTemporaryPaths):
+                                     temporary_paths: _EverestEnvironmentTemporaryPaths):
 
         liboccp_configuration_helper = LibOCPP16ConfigurationHelper() if self._ocpp_config.ocpp_version == OCPPVersion.ocpp16 else LibOCPP201ConfigurationHelper()
 
@@ -167,7 +179,7 @@ class EverestTestEnvironmentSetup:
                 target_directory=temporary_paths.ocpp_database_dir  # Path(self.temp_ocpp_database_dir.name),
             )
 
-    def _create_everest_configuration_visitors(self, temporary_paths: EverestEnvironmentTemporaryPaths):
+    def _create_everest_configuration_visitors(self, temporary_paths: _EverestEnvironmentTemporaryPaths):
         configuration_visitors = []
         if self._ocpp_config:
             configuration_visitors.append(self._create_ocpp_module_configuration_visitor(temporary_paths))

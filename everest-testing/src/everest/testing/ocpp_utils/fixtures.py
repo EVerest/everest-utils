@@ -1,10 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
-import logging
 import sys
 import os
 from functools import wraps
-from typing import Optional
 from unittest.mock import Mock
 
 import pytest
@@ -23,8 +21,7 @@ from pyftpdlib import servers
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
 
-from everest.testing.core_utils.controller.everest_environment_setup import EverestTestEnvironmentSetup, \
-    EverestEnvironmentCoreConfiguration, EverestEnvironmentOCPPConfiguration, EverestEnvironmentProbeModuleConfiguration
+from everest.testing.core_utils.configuration.everest_environment_setup import EverestEnvironmentOCPPConfiguration
 from everest.testing.core_utils.controller.everest_test_controller import EverestTestController
 from everest.testing.ocpp_utils.central_system import CentralSystem
 from everest.testing.ocpp_utils.charge_point_utils import TestUtility, OcppTestConfiguration
@@ -49,19 +46,6 @@ def ocpp_config(request, test_config: OcppTestConfiguration):
         template_ocpp_config=Path(ocpp_config_marker) if ocpp_config_marker else None
     )
 
-
-
-@pytest.fixture
-def test_controller(request, tmp_path, everest_core, test_config: OcppTestConfiguration) -> EverestTestController:
-    """Fixture that references the test_controller that can be used for
-    control events for the test cases.
-    """
-
-
-    test_controller = EverestTestController(everest_core=everest_core)
-
-    yield test_controller
-    test_controller.stop()
 
 
 @pytest_asyncio.fixture
@@ -169,7 +153,7 @@ async def charge_point_v16(request, central_system_v16: CentralSystem, test_cont
 async def charge_point_v201(central_system_v201: CentralSystem, test_controller: EverestTestController):
     """Fixture for ChargePoint16. Requires central_system_v201 and test_controller. Starts test_controller immediately
     """
-    test_controller.start(central_system_v201.port)
+    test_controller.start()
     cp = await central_system_v201.wait_for_chargepoint()
     yield cp
     cp.stop()

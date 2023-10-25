@@ -6,6 +6,9 @@ class EverestConfigAdjustmentVisitor(ABC):
     """ Visitor that manipulates a (parsed) EVerest config when called.
 
      Used to build up / adapt EVerest configurations for tests.
+
+     Adjustments can be collected during the configuration setup process. The Everst core class then applies all
+     configuration adjustments.
      """
 
     @abstractmethod

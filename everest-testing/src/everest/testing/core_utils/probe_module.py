@@ -1,13 +1,9 @@
 import asyncio
 import logging
-from copy import deepcopy
 from queue import Queue
-from typing import Any, Callable, List, Dict
+from typing import Any, Callable
 
 from everest.framework import Module, RuntimeSession
-
-from everest.testing.core_utils.common import Requirement
-from everest.testing.core_utils.everst_configuration_visitor import EverestConfigAdjustmentVisitor
 
 
 class ProbeModule:
@@ -107,25 +103,3 @@ class ProbeModule:
         Convenience method which allows you to wait until the _ready() callback is triggered (i.e. until EVerest is up and running)
         """
         await asyncio.wait_for(self._ready_event.wait(), timeout)
-
-
-class ProbeModuleConfigurationVisitor(EverestConfigAdjustmentVisitor):
-    """ Adds the probe module into an EVerest config """
-
-    def __init__(self,
-                 connections: Dict[str, List[Requirement]],
-                 module_id: str = "probe"
-                 ):
-        self._module_id = module_id
-        self._connections = connections
-
-    def adjust_everest_configuration(self, everest_config: Dict) -> Dict:
-        adjusted_config = deepcopy(everest_config)
-
-        active_modules = adjusted_config.setdefault("active_modules", {})
-        active_modules[self._module_id] = {
-            'connections': self._connections,
-            'module': 'ProbeModule'
-        }
-
-        return adjusted_config

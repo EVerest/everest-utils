@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
-import logging
 from pathlib import Path
 from typing import Optional
 
 import pytest
 
-from everest.testing.core_utils.controller.everest_environment_setup import EverestEnvironmentProbeModuleConfiguration, \
+from everest.testing.core_utils.configuration.everest_environment_setup import EverestEnvironmentProbeModuleConfiguration, \
     EverestTestEnvironmentSetup, EverestEnvironmentOCPPConfiguration, EverestEnvironmentCoreConfiguration
+from everest.testing.core_utils.controller.everest_test_controller import EverestTestController
 from everest.testing.core_utils.everest_core import EverestCore
 
 
@@ -66,3 +66,17 @@ def everest_core(request,
 
     # FIXME (aw): proper life time management, shouldn't the fixure start and stop?
     environment_setup.everest_core.stop()
+
+
+@pytest.fixture
+def test_controller(request, tmp_path, everest_core) -> EverestTestController:
+    """Fixture that references the test_controller that can be used for
+    control events for the test cases.
+    """
+
+    test_controller = EverestTestController(everest_core=everest_core)
+
+    yield test_controller
+
+    # FIXME (aw): proper life time management, shouldn't the fixure start and stop?
+    test_controller.stop()

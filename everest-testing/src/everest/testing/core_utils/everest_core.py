@@ -4,14 +4,13 @@
 import logging
 import os
 import signal
-from copy import deepcopy
 from threading import Thread
 import threading
 import time
 import subprocess
 from pathlib import Path
 import tempfile
-from typing import List, Optional, Dict
+from typing import List, Optional
 import uuid
 import yaml
 import selectors
@@ -19,8 +18,11 @@ from signal import SIGINT
 
 from everest.framework import RuntimeSession
 from everest.testing.core_utils.common import Requirement
-from everest.testing.core_utils.everst_configuration_visitor import EverestConfigAdjustmentVisitor
-from everest.testing.core_utils.probe_module import ProbeModuleConfigurationVisitor
+from everest.testing.core_utils.configuration.everest_configuration_visitors.everst_configuration_visitor import EverestConfigAdjustmentVisitor
+from everest.testing.core_utils.configuration.everest_configuration_visitors.mqtt_configuration_visitor import \
+    EverestMqttConfigurationAdjustmentVisitor
+from everest.testing.core_utils.configuration.everest_configuration_visitors.probe_module_configuration_visitor import \
+    ProbeModuleConfigurationVisitor
 
 STARTUP_TIMEOUT = 30
 
@@ -74,29 +76,6 @@ class StatusFifoListener:
                 return []
 
 
-class _EverestMqttConfigurationAdjustmentVisitor(EverestConfigAdjustmentVisitor):
-
-    def __init__(self, everest_uuid: str, mqtt_external_prefix: str):
-        self._everest_uuid = everest_uuid
-        self._mqtt_external_prefix = mqtt_external_prefix
-
-    def adjust_everest_configuration(self, config: Dict) -> Dict:
-        adjusted_everest_config = deepcopy(config)
-        adjusted_everest_config["settings"] = {}
-        adjusted_everest_config["settings"]["mqtt_everest_prefix"] = f"everest_{self._everest_uuid}"
-        adjusted_everest_config["settings"]["mqtt_external_prefix"] = self._mqtt_external_prefix
-        adjusted_everest_config["settings"]["telemetry_prefix"] = f"telemetry_{self._everest_uuid}"
-
-        # make sure controller starts with a dynamic port
-        adjusted_everest_config["settings"]["controller_port"] = 0
-
-        try:
-            adjusted_everest_config["active_modules"]["iso15118_car"]["config_implementation"]["main"][
-                "mqtt_prefix"] = self._mqtt_external_prefix
-        except KeyError:
-            logging.warning("Missing key in iso15118_car config")
-
-        return adjusted_everest_config
 
 
 class EverestCore:
@@ -151,8 +130,8 @@ class EverestCore:
     def _write_temporary_config(self, template_config_path: Path, everest_configuration_adjustment_visitors: Optional[List[EverestConfigAdjustmentVisitor]]):
         everest_configuration_adjustment_visitors = everest_configuration_adjustment_visitors if everest_configuration_adjustment_visitors else []
         everest_configuration_adjustment_visitors.append(
-            _EverestMqttConfigurationAdjustmentVisitor(everest_uuid=self.everest_uuid,
-                                                       mqtt_external_prefix=self.mqtt_external_prefix))
+            EverestMqttConfigurationAdjustmentVisitor(everest_uuid=self.everest_uuid,
+                                                      mqtt_external_prefix=self.mqtt_external_prefix))
         everest_config = yaml.safe_load(template_config_path.read_text())
         for visitor in everest_configuration_adjustment_visitors:
             everest_config = visitor.adjust_everest_configuration(everest_config)
