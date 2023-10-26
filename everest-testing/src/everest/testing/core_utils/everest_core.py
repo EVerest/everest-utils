@@ -18,7 +18,7 @@ from signal import SIGINT
 
 from everest.framework import RuntimeSession
 from everest.testing.core_utils.common import Requirement
-from everest.testing.core_utils.configuration.everest_configuration_visitors.everst_configuration_visitor import EverestConfigAdjustmentVisitor
+from everest.testing.core_utils.configuration.everest_configuration_visitors.everest_configuration_visitor import EverestConfigAdjustmentVisitor
 from everest.testing.core_utils.configuration.everest_configuration_visitors.mqtt_configuration_visitor import \
     EverestMqttConfigurationAdjustmentVisitor
 from everest.testing.core_utils.configuration.everest_configuration_visitors.probe_module_configuration_visitor import \

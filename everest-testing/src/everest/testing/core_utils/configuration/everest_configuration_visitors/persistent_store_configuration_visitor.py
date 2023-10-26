@@ -3,7 +3,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Dict, Optional
 
-from everest.testing.core_utils.configuration.everest_configuration_visitors.everst_configuration_visitor import \
+from everest.testing.core_utils.configuration.everest_configuration_visitors.everest_configuration_visitor import \
     EverestConfigAdjustmentVisitor
 
 

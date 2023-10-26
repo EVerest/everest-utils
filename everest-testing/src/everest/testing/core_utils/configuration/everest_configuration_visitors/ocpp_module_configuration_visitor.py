@@ -3,7 +3,7 @@ from dataclasses import dataclass, asdict
 from typing import Union, Dict
 
 from everest.testing.core_utils.common import OCPPVersion
-from everest.testing.core_utils.configuration.everest_configuration_visitors.everst_configuration_visitor import EverestConfigAdjustmentVisitor
+from everest.testing.core_utils.configuration.everest_configuration_visitors.everest_configuration_visitor import EverestConfigAdjustmentVisitor
 
 
 
