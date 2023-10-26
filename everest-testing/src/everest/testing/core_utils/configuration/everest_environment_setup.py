@@ -93,7 +93,7 @@ class EverestTestEnvironmentSetup:
                  probe_config: Optional[EverestEnvironmentProbeModuleConfiguration] = None,
                  evse_security_config: Optional[EverestEnvironmentEvseSecurityConfiguration] = None,
                  persistent_store_config: Optional[EverestEnvironmentPersistentStoreConfiguration] = None,
-                 standalone_module: Optional[str] = None
+                 standalone_module: Optional[Union[str, List[str]]] = None
                  ) -> None:
         self._core_config = core_config
         self._ocpp_config = ocpp_config

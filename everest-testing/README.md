@@ -35,6 +35,7 @@ The core_utils basically provide two fixtures that you can require in your test 
 
 Some OCPP fixtures will parse pytest markers of test cases. The following markers can be used:
 - **everest_core_config**: Can be used to specify the everest configuration file to be used in this test case
+- **standalone_module**: Define one or several modules as standalone (multiple modules via `@pytest.mark.standalone_module("mod1","mod2")`)
 - **probe_module**: If set, the ProbeModule will be injected into the config (used by the `probe_module_config` fixture). You may provide the config args as fixture arguments.
 - **source_certs_dir**: If set and the  default `evse_security_config` fixture is used, this will cause the  `EvseSecurity` module configuration to use a  temporary certificates folder into which the source certificate folder trees are copied.
 - **use_temporary_persistent_store**: If set and the  default `persistent_storage_config` fixture is used, this will cause the  `PersistentStore` module configuration to use a  temporary database.
@@ -61,7 +62,8 @@ An important function that you will frequently use when writing test cases is th
 ### pytest markers
 
 - **ocpp_version**: Can be "ocpp1.6" or "ocpp2.0.1" and is used to setup EVerest and the central system for the specific OCPP version
-- **ocpp_config**: Specification of the .json OCPP config file. Used in `ocpp_config` fixture and used as template configuraiton (if not specified, the OCPP config as specified in the EVerest configuration is used) 
+- **ocpp_config**: Specification of the .json OCPP config file. Used in `ocpp_config` fixture and used as template configuration (if not specified, the OCPP config as specified in the EVerest configuration is used) 
+- **inject_csms_mock**: (currently ohly OCPP 2.0.1) If set, the `central_system_v201` will wrap any csms handler method into an unittest mock. In particular, this allows changing the CSMS behavior even after the chargepoint is started by setting side effects of the mock. See `everest.testing.ocpp_utils.charge_point_v201.incject_csms_v201_mock` docstring for an example.
 
 
 ## Add a conftest.py

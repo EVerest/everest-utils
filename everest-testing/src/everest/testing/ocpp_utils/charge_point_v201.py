@@ -5,6 +5,10 @@ import asyncio
 import logging
 import time
 from datetime import datetime
+from functools import wraps
+from unittest.mock import Mock
+
+from everest.testing.ocpp_utils.central_system import CentralSystem
 from websockets.exceptions import ConnectionClosedOK, ConnectionClosedError
 
 from ocpp.messages import unpack
@@ -28,7 +32,6 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 class ChargePoint201(cp):
-
     """Wrapper for the OCPP2.0.1 chargepoint websocket client. Implementes the communication
      of messages sent from CSMS to chargepoint.
     """
@@ -355,3 +358,38 @@ class ChargePoint201(cp):
         payload = call.UpdateFirmwarePayload(**kwargs)
         return await self.call(payload)
 
+
+def incject_csms_v201_mock(cs: CentralSystem) -> Mock:
+    """ Given a not yet started CentralSystem, add mock overrides for _any_ action handler.
+
+    If not touched, those will simply proxy any request.
+
+    However, they allow later change of the CSMS return values:
+
+    Example:
+
+    @inject_csms_mock
+    async def test_foo(central_system_v201: CentralSystem):
+        central_system_v201.mock.on_get_15118_ev_certificate.side_effect = [
+                call_result201.Get15118EVCertificatePayload(status=response_status,
+                                                            exi_response=exi_response)]
+    """
+
+    def catch_mock(mock, method_name, method):
+        method_mock = getattr(mock, method_name)
+
+        @on(method._on_action)
+        @wraps(method)
+        def _method(*args, **kwargs):
+            mock_res = method_mock(*args, **kwargs)
+            if method_mock.side_effect:
+                return mock_res
+            return method(cs.chargepoint, *args, **kwargs)
+
+        return _method
+
+    mock = Mock(spec=ChargePoint201)
+    charge_point_action_handlers = {k: v for k, v in ChargePoint201.__dict__.items() if hasattr(v, "_on_action")}
+    for action_name, action_method in charge_point_action_handlers.items():
+        cs.function_overrides.append((action_name, catch_mock(mock, action_name, action_method)))
+    return mock

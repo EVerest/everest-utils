@@ -15,7 +15,7 @@ from threading import Thread
 import getpass
 from pathlib import Path
 
-from everest.testing.ocpp_utils.charge_point_v201 import ChargePoint201
+from everest.testing.ocpp_utils.charge_point_v201 import ChargePoint201, incject_csms_v201_mock
 from ocpp.routing import on
 from pyftpdlib import servers
 from pyftpdlib.authorizers import DummyAuthorizer
@@ -72,33 +72,6 @@ async def central_system_v16(request, test_config: OcppTestConfiguration):
 
 
 
-def _incject_csms_v201_mock(cs: CentralSystem) -> Mock:
-    """ Given a not yet started CentralSystem, add mock overrides for _any_ action handler.
-
-    If not touched, those will simply proxy any request.
-
-    However, they allow later change of the CSMS return values:
-
-    Example:
-
-    """
-    def catch_mock(mock, method_name, method):
-        method_mock = getattr(mock, method_name)
-
-        @on(method._on_action)
-        @wraps(method)
-        def _method(*args, **kwargs):
-            mock_res = method_mock(*args, **kwargs)
-            if method_mock.side_effect:
-                return mock_res
-            return method(cs.chargepoint, *args, **kwargs)
-        return _method
-    mock = Mock(spec=ChargePoint201)
-    charge_point_action_handlers = {k:v for k,v  in ChargePoint201.__dict__.items() if hasattr(v, "_on_action")}
-    for action_name, action_method in charge_point_action_handlers.items():
-        cs.function_overrides.append( (action_name, catch_mock(mock, action_name, action_method)))
-    return mock
-
 
 @pytest_asyncio.fixture
 async def central_system_v201(request, test_config: OcppTestConfiguration):
@@ -117,7 +90,7 @@ async def central_system_v201(request, test_config: OcppTestConfiguration):
                        ocpp_version='ocpp2.0.1')
 
     if request.node.get_closest_marker('inject_csms_mock'):
-        mock = _incject_csms_v201_mock(cs)
+        mock = incject_csms_v201_mock(cs)
         cs.mock = mock
 
     await cs.start(ssl_context)

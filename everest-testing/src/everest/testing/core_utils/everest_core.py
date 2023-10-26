@@ -10,7 +10,7 @@ import time
 import subprocess
 from pathlib import Path
 import tempfile
-from typing import List, Optional
+from typing import List, Optional, Union
 import uuid
 import yaml
 import selectors
@@ -85,7 +85,7 @@ class EverestCore:
     def __init__(self,
                  prefix_path: Path,
                  config_path: Path = None,
-                 standalone_module: Optional[str] = None,
+                 standalone_module: Optional[Union[str, List[str]]] = None,
                  everest_configuration_adjustment_visitors: Optional[
                      List[EverestConfigAdjustmentVisitor]] = None) -> None:
         """Initialize EVerest using everest_core_path and everest_config_path
@@ -137,7 +137,7 @@ class EverestCore:
             everest_config = visitor.adjust_everest_configuration(everest_config)
         yaml.dump(everest_config, self.temp_everest_config_file)
 
-    def start(self, standalone_module: Optional[str] = None, test_connections: Connections = None):
+    def start(self, standalone_module: Optional[Union[str, List[str]]] = None, test_connections: Connections = None):
         """Starts everest-core in a subprocess
 
         Args:
@@ -162,9 +162,12 @@ class EverestCore:
         args = [str(manager_path.resolve()), '--config', str(self.everest_config_path),
                 '--status-fifo', str(status_fifo_path)]
 
-        if standalone_module is not None:
+        if standalone_module:
             logging.info(f"Standalone module {standalone_module} was specified")
-            args.extend(['--standalone', standalone_module])
+            if not isinstance(standalone_module, list):
+                standalone_module = [standalone_module]
+            for s in standalone_module:
+                args.extend(['--standalone', s])
 
         logging.info(" ".join(args))
 

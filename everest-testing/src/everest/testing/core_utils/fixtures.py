@@ -80,7 +80,7 @@ def everest_core(request,
         probe_config=probe_module_config,
         evse_security_config=evse_security_config,
         persistent_store_config=persistent_store_config,
-        standalone_module=standalone_module_marker
+        standalone_module=list(standalone_module_marker.args) if standalone_module_marker else None
     )
 
     environment_setup.setup_environment(tmp_path=tmp_path)
