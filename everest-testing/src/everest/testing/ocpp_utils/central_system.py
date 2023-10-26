@@ -4,10 +4,11 @@
 import asyncio
 import time
 import logging
+from functools import wraps
 from unittest.mock import Mock
 
 import websockets
-from ocpp.routing import create_route_map
+from ocpp.routing import create_route_map, on
 from ocpp.charge_point import ChargePoint
 
 from everest.testing.ocpp_utils.charge_point_v16 import ChargePoint16
