@@ -2,7 +2,8 @@ import logging
 from copy import deepcopy
 from typing import Dict
 
-from everest.testing.core_utils.configuration.everest_configuration_visitors.everest_configuration_visitor import EverestConfigAdjustmentVisitor
+from everest.testing.core_utils.configuration.everest_configuration_visitors.everest_configuration_visitor import \
+    EverestConfigAdjustmentVisitor
 
 
 class EverestMqttConfigurationAdjustmentVisitor(EverestConfigAdjustmentVisitor):
@@ -15,6 +16,10 @@ class EverestMqttConfigurationAdjustmentVisitor(EverestConfigAdjustmentVisitor):
         self._everest_uuid = everest_uuid
         self._mqtt_external_prefix = mqtt_external_prefix
 
+    def _find_jscarv2g_module_ids(self, config: Dict):
+        return [k for k, v in config["active_modules"].items()
+                if v.get("module") == "JsCarV2G"]
+
     def adjust_everest_configuration(self, config: Dict) -> Dict:
         adjusted_everest_config = deepcopy(config)
         adjusted_everest_config["settings"] = {}
@@ -25,10 +30,9 @@ class EverestMqttConfigurationAdjustmentVisitor(EverestConfigAdjustmentVisitor):
         # make sure controller starts with a dynamic port
         adjusted_everest_config["settings"]["controller_port"] = 0
 
-        try:
-            adjusted_everest_config["active_modules"]["iso15118_car"]["config_implementation"]["main"][
-                "mqtt_prefix"] = self._mqtt_external_prefix
-        except KeyError:
-            logging.warning("Missing key in iso15118_car config")
+        for car_module_id in self._find_jscarv2g_module_ids(adjusted_everest_config):
+            adjusted_everest_config["active_modules"][car_module_id]\
+                .setdefault("config_implementation",{})\
+                .setdefault("main", {})["mqtt_prefix"] = self._mqtt_external_prefix
 
         return adjusted_everest_config
