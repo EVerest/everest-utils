@@ -5,6 +5,7 @@ import asyncio
 import time
 import logging
 from functools import wraps
+from typing import Union
 from unittest.mock import Mock
 
 import websockets
@@ -77,7 +78,7 @@ class CentralSystem:
                 f"Connection on invalid path {chargepoint_id} received. Check the configuration of the ChargePointId.")
             return await websocket.close()
 
-    async def wait_for_chargepoint(self, timeout=30, wait_for_bootnotification=True) -> ChargePoint:
+    async def wait_for_chargepoint(self, timeout=30, wait_for_bootnotification=True) -> Union[ChargePoint16, ChargePoint201]:
         """Waits for the chargepoint to connect to the CSMS
 
         Args:

@@ -118,7 +118,7 @@ async def charge_point_v16(request, central_system_v16: CentralSystem, test_cont
         raise Exception("Using a standalone module with the charge_point_v16 fixture is not supported, please use central_system_v16_standalone")
     cp = await central_system_v16.wait_for_chargepoint()
     yield cp
-    cp.stop()
+    await cp.stop()
 
 
 
@@ -129,7 +129,7 @@ async def charge_point_v201(central_system_v201: CentralSystem, test_controller:
     test_controller.start()
     cp = await central_system_v201.wait_for_chargepoint()
     yield cp
-    cp.stop()
+    await cp.stop()
 
 
 @pytest.fixture

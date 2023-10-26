@@ -161,7 +161,7 @@ class EverestTestEnvironmentSetup:
                 MessageLogPath=str(temporary_paths.ocpp_message_log_directory),
                 CertsPath=str(temporary_paths.certs_dir),
                 UserConfigPath=str(temporary_paths.ocpp_user_config_file),
-                DatabasePath=str(temporary_paths.ocpp_database_dir)  # self.temp_ocpp_database_dir.name
+                DatabasePath=str(temporary_paths.ocpp_database_dir)
             )
         elif self._ocpp_config.ocpp_version == OCPPVersion.ocpp201:
             ocpp_paths = OCPPModulePaths201(
@@ -192,21 +192,20 @@ class EverestTestEnvironmentSetup:
 
         liboccp_configuration_helper.install_default_ocpp_certificates(
             source_certs_directory=source_certs_directory,
-            target_certs_directory=temporary_paths.certs_dir)  # Path(self.temp_ocpp_certs_dir.name))
+            target_certs_directory=temporary_paths.certs_dir)
 
         liboccp_configuration_helper.generate_ocpp_config(
             central_system_port=self._ocpp_config.central_system_port,
             source_ocpp_config_file=source_ocpp_config,
-            target_ocpp_config_file=temporary_paths.ocpp_config_file,  # Path(self.temp_ocpp_config_file.name),
+            target_ocpp_config_file=temporary_paths.ocpp_config_file,
             target_ocpp_user_config_file=temporary_paths.ocpp_user_config_file,
-            # Path(self.temp_ocpp_user_config_file.name),
         )
 
         if self._ocpp_config.ocpp_version == OCPPVersion.ocpp201:
             liboccp_configuration_helper.create_temporary_ocpp_configuration_db(
                 libocpp_path=self._ocpp_config.libocpp_path,
                 ocpp_configuration_file=temporary_paths.ocpp_config_file,
-                target_directory=temporary_paths.ocpp_database_dir  # Path(self.temp_ocpp_database_dir.name),
+                target_directory=temporary_paths.ocpp_database_dir
             )
 
     def _create_everest_configuration_visitors(self, temporary_paths: _EverestEnvironmentTemporaryPaths):

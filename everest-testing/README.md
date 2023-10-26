@@ -65,7 +65,7 @@ An important function that you will frequently use when writing test cases is th
 
 - **ocpp_version**: Can be "ocpp1.6" or "ocpp2.0.1" and is used to setup EVerest and the central system for the specific OCPP version
 - **ocpp_config**: Specification of the .json OCPP config file. Used in `ocpp_config` fixture and used as template configuration (if not specified, the OCPP config as specified in the EVerest configuration is used) 
-- **inject_csms_mock**: (currently ohly OCPP 2.0.1) If set, the `central_system_v201` will wrap any csms handler method into an unittest mock. In particular, this allows changing the CSMS behavior even after the chargepoint is started by setting side effects of the mock. See `everest.testing.ocpp_utils.charge_point_v201.inject_csms_v201_mock` docstring for an example.
+- **inject_csms_mock**: (currently only OCPP 2.0.1) If set, the `central_system_v201` will wrap any csms handler method into an unittest mock. In particular, this allows changing the CSMS behavior even after the chargepoint is started by setting side effects of the mock. See `everest.testing.ocpp_utils.charge_point_v201.inject_csms_v201_mock` docstring for an example.
 
 
 ## Add a conftest.py
@@ -74,7 +74,7 @@ The test_controller fixture and inherently also the charge_point_v16 and charge_
 
 ## Set markers and override fixture to configure instances
 
-The  `everest_core` fixture utilizes the several configuration fixtures to configure the running instances. In order to adjust
+The `everest_core` fixture utilizes the several configuration fixtures to configure the running instances. In order to adjust
 the configuration you can
 - set respective pytest markers to adjust the configuration for a single test / test class
 - override the specific fixtures to adjust the configuration for a whole test suite
