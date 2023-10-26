@@ -27,13 +27,17 @@ The core_utils basically provide two fixtures that you can require in your test 
 
 - **core_config** Core configuration, which is the everest_core path and the configuration path (utilizes the `everest_core_config` marker.)
 - **probe_module_config** The main fixture `everest_core` can be used to start and stop the everest-core application.
-- **ocpp_config** The main fixture `everest_core` can be used to start and stop the everest-core application.
+- **ocpp_config**  Used to provide the configuration to set up the OCPP (1.6 or 2.0.1) module.
+- **evse_security_config** Used to provide the configuration to set up the EvseSecurity module.
+- **persistent_storage_config** Used to provide the configuration to set up the PersistentStorage module.
 
 ### pytest markers
 
 Some OCPP fixtures will parse pytest markers of test cases. The following markers can be used:
 - **everest_core_config**: Can be used to specify the everest configuration file to be used in this test case
 - **probe_module**: If set, the ProbeModule will be injected into the config (used by the `probe_module_config` fixture). You may provide the config args as fixture arguments.
+- **source_certs_dir**: If set and the  default `evse_security_config` fixture is used, this will cause the  `EvseSecurity` module configuration to use a  temporary certificates folder into which the source certificate folder trees are copied.
+- **use_temporary_persistent_store**: If set and the  default `persistent_storage_config` fixture is used, this will cause the  `PersistentStore` module configuration to use a  temporary database.
 
 ## OCPP utils
 
@@ -77,7 +81,7 @@ Note: When overriding a fixture, be careful which pytest markers might be ignore
 
 ```python
 
-from everest.testing.core_utils.fixtures import everest_core, probe_module_config, test_controller
+from everest.testing.core_utils.fixtures import *
 from everest.testing.ocpp_utils.fixtures import ocpp_config
 
 @pytest.fixture
@@ -102,6 +106,8 @@ class TestMyEverestModule:
         ...
 
 ```
+
+_Note_: The "*" import from `core_utils.fixtures` may ensure backwards compatibility to automatically load new default fixtures in the future!
 
 
 ## Install

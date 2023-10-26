@@ -5,8 +5,10 @@ from typing import Optional
 
 import pytest
 
-from everest.testing.core_utils.configuration.everest_environment_setup import EverestEnvironmentProbeModuleConfiguration, \
-    EverestTestEnvironmentSetup, EverestEnvironmentOCPPConfiguration, EverestEnvironmentCoreConfiguration
+from everest.testing.core_utils.configuration.everest_environment_setup import \
+    EverestEnvironmentProbeModuleConfiguration, \
+    EverestTestEnvironmentSetup, EverestEnvironmentOCPPConfiguration, EverestEnvironmentCoreConfiguration, \
+    EverestEnvironmentEvseSecurityConfiguration, EverestEnvironmentPersistentStoreConfiguration
 from everest.testing.core_utils.controller.everest_test_controller import EverestTestController
 from everest.testing.core_utils.everest_core import EverestCore
 
@@ -43,13 +45,31 @@ def core_config(request) -> EverestEnvironmentCoreConfiguration:
 def ocpp_config(request) -> Optional[EverestEnvironmentOCPPConfiguration]:
     return None
 
+@pytest.fixture
+def evse_security_config(request) -> Optional[EverestEnvironmentEvseSecurityConfiguration]:
+    source_certs_dir_marker = request.node.get_closest_marker("source_certs_dir")
+    if source_certs_dir_marker:
+        return EverestEnvironmentEvseSecurityConfiguration(source_certificate_directory=Path(source_certs_dir_marker.args[0]))
+    return None
+
+@pytest.fixture
+def persistent_store_config(request) -> Optional[EverestEnvironmentPersistentStoreConfiguration]:
+    persistent_store_marker = request.node.get_closest_marker("use_temporary_persistent_store")
+    if persistent_store_marker:
+        return EverestEnvironmentPersistentStoreConfiguration(use_temporary_folder=True)
+    return None
+
+
 
 @pytest.fixture
 def everest_core(request,
                  tmp_path,
                  core_config: EverestEnvironmentCoreConfiguration,
-                 ocpp_config: EverestEnvironmentOCPPConfiguration,
-                 probe_module_config: EverestEnvironmentProbeModuleConfiguration) -> EverestCore:
+                 ocpp_config: Optional[EverestEnvironmentOCPPConfiguration],
+                 probe_module_config: Optional[EverestEnvironmentProbeModuleConfiguration],
+                 evse_security_config: Optional[EverestEnvironmentEvseSecurityConfiguration],
+                 persistent_store_config: Optional[EverestEnvironmentPersistentStoreConfiguration],
+                 ) -> EverestCore:
     """Fixture that can be used to start and stop everest-core"""
 
     standalone_module_marker = request.node.get_closest_marker('standalone_module')
@@ -58,6 +78,8 @@ def everest_core(request,
         core_config=core_config,
         ocpp_config=ocpp_config,
         probe_config=probe_module_config,
+        evse_security_config=evse_security_config,
+        persistent_store_config=persistent_store_config,
         standalone_module=standalone_module_marker
     )
 
