@@ -132,7 +132,7 @@ class CentralSystem:
 
 
 
-def incject_csms_v201_mock(cs: CentralSystem) -> Mock:
+def inject_csms_v201_mock(cs: CentralSystem) -> Mock:
     """ Given a not yet started CentralSystem, add mock overrides for _any_ action handler.
 
     If not touched, those will simply proxy any request.

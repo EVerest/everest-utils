@@ -23,7 +23,7 @@ from pyftpdlib.handlers import FTPHandler
 
 from everest.testing.core_utils.configuration.everest_environment_setup import EverestEnvironmentOCPPConfiguration
 from everest.testing.core_utils.controller.everest_test_controller import EverestTestController
-from everest.testing.ocpp_utils.central_system import CentralSystem, incject_csms_v201_mock
+from everest.testing.ocpp_utils.central_system import CentralSystem, inject_csms_v201_mock
 from everest.testing.ocpp_utils.charge_point_utils import TestUtility, OcppTestConfiguration
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
@@ -90,7 +90,7 @@ async def central_system_v201(request, test_config: OcppTestConfiguration):
                        ocpp_version='ocpp2.0.1')
 
     if request.node.get_closest_marker('inject_csms_mock'):
-        mock = incject_csms_v201_mock(cs)
+        mock = inject_csms_v201_mock(cs)
         cs.mock = mock
 
     await cs.start(ssl_context)
@@ -113,7 +113,7 @@ async def charge_point_v16(request, central_system_v16: CentralSystem, test_cont
     """
     marker = request.node.get_closest_marker('standalone_module')
     if marker is None:
-        test_controller.start() # standalone_module = self._probe_config.module_id
+        test_controller.start()
     else:
         raise Exception("Using a standalone module with the charge_point_v16 fixture is not supported, please use central_system_v16_standalone")
     cp = await central_system_v16.wait_for_chargepoint()

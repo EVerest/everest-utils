@@ -10,11 +10,13 @@ The utilities are seperated into
 ## Core Utils
 
 ### everest_core
-The EverestCore class wraps the running EVerest instance and takes care of providing a proper
+The EverestCore class wraps the running EVerest instance and takes care of providing a proper set up environment (including 
+the generation of temporary directories and adjusting the configuration accordingly. Note that in order to do so, EverestCore generates
+ a temporary configuration file.)
 
 ### test_controller
 
-Controller that can be used to start/stop the Everest instance and send events to control/simulate the stack's bevhaior.
+Controller that can be used to start/stop the Everest instance and send events to control/simulate the stack's behavior.
 
 ### Fixtures
 
@@ -26,8 +28,8 @@ The core_utils basically provide two fixtures that you can require in your test 
 #### Configuration Fixtures:
 
 - **core_config** Core configuration, which is the everest_core path and the configuration path (utilizes the `everest_core_config` marker.)
-- **probe_module_config** The main fixture `everest_core` can be used to start and stop the everest-core application.
-- **ocpp_config**  Used to provide the configuration to set up the OCPP (1.6 or 2.0.1) module.
+- **probe_module_config** Used to provide the probe module configuration. In particular can be overriden if the probe module should require module connections.
+- **ocpp_config**  Used to provide the configuration, i.e. the JSON device model,  to set up the OCPP (1.6 or 2.0.1) module.
 - **evse_security_config** Used to provide the configuration to set up the EvseSecurity module.
 - **persistent_storage_config** Used to provide the configuration to set up the PersistentStorage module.
 
@@ -63,7 +65,7 @@ An important function that you will frequently use when writing test cases is th
 
 - **ocpp_version**: Can be "ocpp1.6" or "ocpp2.0.1" and is used to setup EVerest and the central system for the specific OCPP version
 - **ocpp_config**: Specification of the .json OCPP config file. Used in `ocpp_config` fixture and used as template configuration (if not specified, the OCPP config as specified in the EVerest configuration is used) 
-- **inject_csms_mock**: (currently ohly OCPP 2.0.1) If set, the `central_system_v201` will wrap any csms handler method into an unittest mock. In particular, this allows changing the CSMS behavior even after the chargepoint is started by setting side effects of the mock. See `everest.testing.ocpp_utils.charge_point_v201.incject_csms_v201_mock` docstring for an example.
+- **inject_csms_mock**: (currently ohly OCPP 2.0.1) If set, the `central_system_v201` will wrap any csms handler method into an unittest mock. In particular, this allows changing the CSMS behavior even after the chargepoint is started by setting side effects of the mock. See `everest.testing.ocpp_utils.charge_point_v201.inject_csms_v201_mock` docstring for an example.
 
 
 ## Add a conftest.py
