@@ -38,7 +38,7 @@ The core_utils basically provide two fixtures that you can require in your test 
 Some OCPP fixtures will parse pytest markers of test cases. The following markers can be used:
 - **everest_core_config**: Can be used to specify the everest configuration file to be used in this test case
 - **standalone_module**: Define one or several modules as standalone (multiple modules via `@pytest.mark.standalone_module("mod1","mod2")`)
-- **probe_module**: If set, the ProbeModule will be injected into the config (used by the `probe_module_config` fixture). You may provide the config args as fixture arguments.
+- **probe_module**: If set, the ProbeModule will be injected into the config (used by the `probe_module_config` fixture). This marker accepts optional keyword arguments `connections` and `module_id` to configure the probe module. 
 - **source_certs_dir**: If set and the  default `evse_security_config` fixture is used, this will cause the  `EvseSecurity` module configuration to use a  temporary certificates folder into which the source certificate folder trees are copied.
 - **use_temporary_persistent_store**: If set and the  default `persistent_storage_config` fixture is used, this will cause the  `PersistentStore` module configuration to use a  temporary database.
 
