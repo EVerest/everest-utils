@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
-
 import sys
 import os
 from functools import wraps
@@ -21,37 +20,32 @@ from ocpp.routing import on
 from pyftpdlib import servers
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
-from everest.testing.ocpp_utils.controller.test_controller_interface import TestController
-from everest.testing.ocpp_utils.controller.everest_test_controller import EverestTestController
-from everest.testing.ocpp_utils.central_system import CentralSystem
+
+from everest.testing.core_utils.configuration.everest_environment_setup import EverestEnvironmentOCPPConfiguration
+from everest.testing.core_utils.controller.everest_test_controller import EverestTestController
+from everest.testing.ocpp_utils.central_system import CentralSystem, inject_csms_v201_mock
 from everest.testing.ocpp_utils.charge_point_utils import TestUtility, OcppTestConfiguration
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
 
 
 @pytest.fixture
-def test_controller(request, test_config: OcppTestConfiguration) -> TestController:
-    """Fixture that references the the test_controller that can be used for
-    control events for the test cases.
-    """
+def ocpp_config(request, test_config: OcppTestConfiguration):
     ocpp_version = request.node.get_closest_marker("ocpp_version")
     if ocpp_version:
         ocpp_version = request.node.get_closest_marker("ocpp_version").args[0]
     else:
         ocpp_version = "ocpp1.6"
 
-    everest_core_path = Path(request.config.getoption("--everest-prefix"))
-    marker = request.node.get_closest_marker("everest_core_config")
-    if marker is None:
-        config_path = test_config.config_path
-    else:
-        config_path = Path(marker.args[0])
+    ocpp_config_marker = request.node.get_closest_marker("ocpp_config")
 
-    libocpp_path = Path(request.config.getoption("--libocpp"))
-    test_controller = EverestTestController(
-        everest_core_path, libocpp_path, config_path, test_config.charge_point_info.charge_point_id, ocpp_version, request.function.__name__)
-    yield test_controller
-    test_controller.stop()
+    return EverestEnvironmentOCPPConfiguration(
+        central_system_port=test_config.csms_port,
+        ocpp_version=ocpp_version,
+        libocpp_path=Path(request.config.getoption("--libocpp")),
+        template_ocpp_config=Path(ocpp_config_marker) if ocpp_config_marker else None
+    )
+
 
 
 @pytest_asyncio.fixture
@@ -67,7 +61,7 @@ async def central_system_v16(request, test_config: OcppTestConfiguration):
                                     test_config.certificate_info.csms_passphrase)
     else:
         ssl_context = None
-    cs = CentralSystem(None,
+    cs = CentralSystem(test_config.csms_port,
                        test_config.charge_point_info.charge_point_id,
                        ocpp_version='ocpp1.6')
     await cs.start(ssl_context)
@@ -77,33 +71,6 @@ async def central_system_v16(request, test_config: OcppTestConfiguration):
 
 
 
-
-def _incject_csms_v201_mock(cs: CentralSystem) -> Mock:
-    """ Given a not yet started CentralSystem, add mock overrides for _any_ action handler.
-
-    If not touched, those will simply proxy any request.
-
-    However, they allow later change of the CSMS return values:
-
-    Example:
-
-    """
-    def catch_mock(mock, method_name, method):
-        method_mock = getattr(mock, method_name)
-
-        @on(method._on_action)
-        @wraps(method)
-        def _method(*args, **kwargs):
-            mock_res = method_mock(*args, **kwargs)
-            if method_mock.side_effect:
-                return mock_res
-            return method(cs.chargepoint, *args, **kwargs)
-        return _method
-    mock = Mock(spec=ChargePoint201)
-    charge_point_action_handlers = {k:v for k,v  in ChargePoint201.__dict__.items() if hasattr(v, "_on_action")}
-    for action_name, action_method in charge_point_action_handlers.items():
-        cs.function_overrides.append( (action_name, catch_mock(mock, action_name, action_method)))
-    return mock
 
 
 @pytest_asyncio.fixture
@@ -118,12 +85,12 @@ async def central_system_v201(request, test_config: OcppTestConfiguration):
                                     test_config.certificate_info.csms_passphrase)
     else:
         ssl_context = None
-    cs = CentralSystem(None,
+    cs = CentralSystem(test_config.csms_port,
                        test_config.charge_point_info.charge_point_id,
                        ocpp_version='ocpp2.0.1')
 
     if request.node.get_closest_marker('inject_csms_mock'):
-        mock = _incject_csms_v201_mock(cs)
+        mock = inject_csms_v201_mock(cs)
         cs.mock = mock
 
     await cs.start(ssl_context)
@@ -133,41 +100,36 @@ async def central_system_v201(request, test_config: OcppTestConfiguration):
 
 
 @pytest_asyncio.fixture
-async def central_system_v16_standalone(request, central_system_v16: CentralSystem, test_controller: TestController):
+async def central_system_v16_standalone(request, central_system_v16: CentralSystem, test_controller: EverestTestController):
     """Fixture for standalone central system. Requires central_system_v16 and test_controller. Starts test_controller immediately
     """
-    marker = request.node.get_closest_marker('standalone_module')
-    if marker is None:
-        test_controller.start(central_system_v16.port)
-    else:
-        standalone_module = marker.args[0]
-        test_controller.start(central_system_v16.port, standalone_module)
+    test_controller.start()
     yield central_system_v16
 
 
 @pytest_asyncio.fixture
-async def charge_point_v16(request, central_system_v16: CentralSystem, test_controller: TestController):
+async def charge_point_v16(request, central_system_v16: CentralSystem, test_controller: EverestTestController):
     """Fixture for ChargePoint16. Requires central_system_v16 and test_controller. Starts test_controller immediately
     """
     marker = request.node.get_closest_marker('standalone_module')
     if marker is None:
-        test_controller.start(central_system_v16.port)
+        test_controller.start()
     else:
         raise Exception("Using a standalone module with the charge_point_v16 fixture is not supported, please use central_system_v16_standalone")
     cp = await central_system_v16.wait_for_chargepoint()
     yield cp
-    cp.stop()
+    await cp.stop()
 
 
 
 @pytest_asyncio.fixture
-async def charge_point_v201(central_system_v201: CentralSystem, test_controller: TestController):
+async def charge_point_v201(central_system_v201: CentralSystem, test_controller: EverestTestController):
     """Fixture for ChargePoint16. Requires central_system_v201 and test_controller. Starts test_controller immediately
     """
-    test_controller.start(central_system_v201.port)
+    test_controller.start()
     cp = await central_system_v201.wait_for_chargepoint()
     yield cp
-    cp.stop()
+    await cp.stop()
 
 
 @pytest.fixture

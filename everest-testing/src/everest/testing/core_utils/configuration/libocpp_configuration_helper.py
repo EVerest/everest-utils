@@ -1,12 +1,9 @@
 import json
-import os
 import shutil
+import subprocess
 from abc import ABC, abstractmethod
 from pathlib import Path
-import subprocess
-import logging
-
-from everest.testing.ocpp_utils.common import OCPPVersion
+from typing import Union
 
 
 class LibOCPPConfigurationHelperBase(ABC):
@@ -16,7 +13,7 @@ class LibOCPPConfigurationHelperBase(ABC):
                              target_ocpp_config_file: Path,
                              target_ocpp_user_config_file: Path,
                              source_ocpp_config_file: Path,
-                             central_system_port: str):
+                             central_system_port: Union[str, int]):
         config = self._get_occp_config(central_system_port=central_system_port,
                                        source_ocpp_config_file=source_ocpp_config_file)
         with target_ocpp_config_file.open("w") as f:
@@ -41,12 +38,13 @@ class LibOCPP16ConfigurationHelper(LibOCPPConfigurationHelperBase):
     def _get_occp_config(self, central_system_port, source_ocpp_config_file: Path):
         ocpp_config = json.loads(source_ocpp_config_file.read_text())
         charge_point_id = ocpp_config["Internal"]["ChargePointId"]
-        ocpp_config["Internal"][
-            "CentralSystemURI"] = f"127.0.0.1:{central_system_port}/{charge_point_id}"
+        ocpp_config["Internal"]["CentralSystemURI"] = f"127.0.0.1:{central_system_port}/{charge_point_id}"
         return ocpp_config
 
 
 class LibOCPP201ConfigurationHelper(LibOCPPConfigurationHelperBase):
+
+
 
     @staticmethod
     def create_temporary_ocpp_configuration_db(libocpp_path: Path,

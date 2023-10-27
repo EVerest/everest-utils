@@ -5,14 +5,15 @@ from typing import Any, Callable
 
 from everest.framework import Module, RuntimeSession
 
+
 class ProbeModule:
     """
     Probe module tool for integration testing, which is a thin abstraction over the C++ bindings from everestpy
     You need to declare the requirements for the probe module with the fixtures starting EVerest ("test_connections" argument),
     but you do not need to specify the interfaces provided by the probe - simply specify the implementation ID when registering cmd handlers and publishing vars.
     """
-    
-    def __init__(self, session: RuntimeSession, module_id = "probe"):
+
+    def __init__(self, session: RuntimeSession, module_id="probe"):
         """
         Construct a probe module and connect it to EVerest.
         - session: runtime session information (path to EVerest installation and location of run config file)
@@ -27,7 +28,7 @@ class ProbeModule:
         # subscribe to session events
         m.init_done(self._ready)
         logging.info("Probe module initialized")
-        
+
     def call_command(self, connection_id: str, command_name: str, args: dict) -> Any:
         """
         Call a command on another module.
@@ -41,7 +42,7 @@ class ProbeModule:
             return self._mod.call_command(interface, command_name, args)
         except Exception as e:
             logging.info(f"Exception in calling {connection_id}.{command_name}: {type(e)}: {e}")
-            
+
     def implement_command(self, implementation_id: str, command_name: str, handler: Callable[[dict], dict]):
         """
         Set up an implementation for a command.
@@ -60,7 +61,7 @@ class ProbeModule:
         If your tests hang, make sure you have implemented all commands which are called in the probe - the EVerest framework does not check this. 
         """
         self._mod.implement_command(implementation_id, command_name, handler)
-        
+
     def publish_variable(self, implementation_id: str, variable_name: str, value: dict | str):
         """
         Publish a variable from an interface the probe module implements.
@@ -69,7 +70,7 @@ class ProbeModule:
         - value: the value to publish
         """
         self._mod.publish_variable(implementation_id, variable_name, value)
-        
+
     def subscribe_variable(self, connection_id: str, variable_name: str, handler: Callable[[dict], None]):
         """
         Subscribe to a variable implemented by a module required by the probe module.
@@ -79,15 +80,16 @@ class ProbeModule:
         Note: The handler runs in a separate thread!
         """
         self._mod.subscribe_variable(self._setup.connections[connection_id][0], variable_name, handler)
-        
+
     def subscribe_variable_to_queue(self, connection_id: str, var_name: str):
         """
         The same as subscribe_variable, but incoming values will be pushed to a queue
         """
         queue = Queue()
-        self._mod.subscribe_variable(self._setup.connections[connection_id][0], var_name, lambda message, _queue=queue: _queue.put(message))
+        self._mod.subscribe_variable(self._setup.connections[connection_id][0], var_name,
+                                     lambda message, _queue=queue: _queue.put(message))
         return queue
-        
+
     def _ready(self):
         """
         Internal function: callback triggered by the EVerest framework when all modules have been initialized
@@ -95,10 +97,9 @@ class ProbeModule:
         """
         logging.info("ProbeModule ready")
         self._ready_event.set()
-        
+
     async def wait_to_be_ready(self, timeout=3):
         """
         Convenience method which allows you to wait until the _ready() callback is triggered (i.e. until EVerest is up and running)
         """
         await asyncio.wait_for(self._ready_event.wait(), timeout)
-        
