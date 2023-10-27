@@ -43,7 +43,7 @@ def ocpp_config(request, test_config: OcppTestConfiguration):
         central_system_port=test_config.csms_port,
         ocpp_version=ocpp_version,
         libocpp_path=Path(request.config.getoption("--libocpp")),
-        template_ocpp_config=Path(ocpp_config_marker) if ocpp_config_marker else None
+        template_ocpp_config=Path(ocpp_config_marker.args[0]) if ocpp_config_marker else None
     )
 
 
