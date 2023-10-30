@@ -50,11 +50,12 @@ class LibOCPP201ConfigurationHelper(LibOCPPConfigurationHelperBase):
 
     @staticmethod
     def create_temporary_ocpp_configuration_db(libocpp_path: Path,
+                                               device_model_schemas_path: Path,
                                                ocpp_configuration_file: Path,
                                                target_directory: Path):
         wd = libocpp_path / "config/v201"
         subprocess.run(
-            f"python3 {libocpp_path / 'config/v201/init_device_model_db.py'} --out {target_directory / 'device_model_storage.db'} --schemas {libocpp_path / 'config/v201/component_schemas'}",
+            f"python3 {libocpp_path / 'config/v201/init_device_model_db.py'} --out {target_directory / 'device_model_storage.db'} --schemas {device_model_schemas_path}",
             cwd=wd,
             check=True,
             shell=True

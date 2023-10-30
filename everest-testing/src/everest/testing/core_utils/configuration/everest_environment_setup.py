@@ -40,6 +40,8 @@ class EverestEnvironmentOCPPConfiguration:
         Path] = None  # If none, the certificates of the everest-core directory / installation will be used
     template_ocpp_config: Optional[
         Path] = None  # Path for OCPP config to be used; if not provided, will be determined from everest config
+    device_model_schemas_path: Optional[
+        Path] = None  # Path of the OCPP device model json schemas. If not set, {libocpp_path} / 'config/v201/component_schemas' will  be used
 
 
 @dataclass
@@ -214,6 +216,9 @@ class EverestTestEnvironmentSetup:
         if self._ocpp_config.ocpp_version == OCPPVersion.ocpp201:
             liboccp_configuration_helper.create_temporary_ocpp_configuration_db(
                 libocpp_path=self._ocpp_config.libocpp_path,
+                device_model_schemas_path=self._ocpp_config.device_model_schemas_path \
+                    if self._ocpp_config.device_model_schemas_path \
+                    else self._ocpp_config.libocpp_path / 'config/v201/component_schemas',
                 ocpp_configuration_file=temporary_paths.ocpp_config_file,
                 target_directory=temporary_paths.ocpp_database_dir
             )
