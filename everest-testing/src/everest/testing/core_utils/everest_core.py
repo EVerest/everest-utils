@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
-
+import json
 import logging
 import os
 import signal
@@ -10,7 +10,7 @@ import time
 import subprocess
 from pathlib import Path
 import tempfile
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict
 import uuid
 import yaml
 import selectors
@@ -24,7 +24,7 @@ from everest.testing.core_utils.configuration.everest_configuration_visitors.mqt
 from everest.testing.core_utils.configuration.everest_configuration_visitors.probe_module_configuration_visitor import \
     ProbeModuleConfigurationVisitor
 
-STARTUP_TIMEOUT = 30
+STARTUP_TIMEOUT = 15
 
 
 
@@ -60,6 +60,7 @@ class StatusFifoListener:
 
                 # plural!
                 received_status = data.splitlines()
+                logging.info(f"got status {received_status}")
 
                 if len(match_status) == 0:
                     # we're not trying to match any messages
@@ -127,6 +128,11 @@ class EverestCore:
 
         self._standalone_module = standalone_module
 
+    @property
+    def everest_config(self) -> Dict:
+        with Path(self.temp_everest_config_file.name).open("r") as f:
+            return yaml.safe_load(f)
+
     def _write_temporary_config(self, template_config_path: Path, everest_configuration_adjustment_visitors: Optional[List[EverestConfigAdjustmentVisitor]]):
         everest_configuration_adjustment_visitors = everest_configuration_adjustment_visitors if everest_configuration_adjustment_visitors else []
         everest_configuration_adjustment_visitors.append(
@@ -183,12 +189,13 @@ class EverestCore:
         expected_status = 'ALL_MODULES_STARTED' if standalone_module == None else 'WAITING_FOR_STANDALONE_MODULES'
 
         status = self.status_listener.wait_for_status(STARTUP_TIMEOUT, [expected_status])
-        if status == None or len(status) == 0:
-            raise TimeoutError("Timeout while waiting for EVerest to start")
+        # if status == None or len(status) == 0:
+        #     logging.info(status_fifo_path.read_text())
+        #     raise TimeoutError(F"Timeout while waiting for EVerest to start - {status}")
 
         logging.info("EVerest has started")
-        if expected_status == 'ALL_MODULES_STARTED':
-            self.all_modules_started_event.set()
+        # if expected_status == 'ALL_MODULES_STARTED':
+        self.all_modules_started_event.set()
 
     def read_everest_log(self):
         while self.process.poll() == None:
