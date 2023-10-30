@@ -5,11 +5,13 @@ import logging
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional, Dict, List, Union
+from typing import Optional, Dict, List, Union, Literal
 
 import yaml
 
 from everest.testing.core_utils.common import OCPPVersion
+from everest.testing.core_utils.configuration.everest_configuration_visitors.everest_configuration_visitor import \
+    EverestConfigAdjustmentVisitor
 from everest.testing.core_utils.configuration.everest_configuration_visitors.evse_security_configuration_visitor import \
     EvseSecurityModuleConfigurationVisitor, EvseSecurityModuleConfiguration
 from everest.testing.core_utils.configuration.everest_configuration_visitors.ocpp_module_configuration_visitor import \
@@ -32,9 +34,14 @@ class EverestEnvironmentOCPPConfiguration:
     libocpp_path: Path
     ocpp_version: OCPPVersion
     central_system_port: str
+    central_system_host: str = "127.0.0.1"
     ocpp_module_id: str = "ocpp"
+    source_certificates_directory: Optional[
+        Path] = None  # If none, the certificates of the everest-core directory / installation will be used
     template_ocpp_config: Optional[
         Path] = None  # Path for OCPP config to be used; if not provided, will be determined from everest config
+    device_model_schemas_path: Optional[
+        Path] = None  # Path of the OCPP device model json schemas. If not set, {libocpp_path} / 'config/v201/component_schemas' will  be used
 
 
 @dataclass
@@ -46,7 +53,7 @@ class EverestEnvironmentEvseSecurityConfiguration:
 
 @dataclass
 class EverestEnvironmentPersistentStoreConfiguration:
-    use_temporary_folder: bool = True  # if true, a temporary persistant storage folder will be used
+    use_temporary_folder: bool = True  # if true, a temporary persistent storage folder will be used
 
 
 @dataclass
@@ -93,7 +100,8 @@ class EverestTestEnvironmentSetup:
                  probe_config: Optional[EverestEnvironmentProbeModuleConfiguration] = None,
                  evse_security_config: Optional[EverestEnvironmentEvseSecurityConfiguration] = None,
                  persistent_store_config: Optional[EverestEnvironmentPersistentStoreConfiguration] = None,
-                 standalone_module: Optional[Union[str, List[str]]] = None
+                 standalone_module: Optional[Union[str, List[str]]] = None,
+                 everest_config_visitors: Optional[List[EverestConfigAdjustmentVisitor]] = None
                  ) -> None:
         self._core_config = core_config
         self._ocpp_config = ocpp_config
@@ -103,6 +111,7 @@ class EverestTestEnvironmentSetup:
         self._standalone_module = standalone_module
         if not self._standalone_module and self._probe_config:
             self._standalone_module = self._probe_config.module_id
+        self._additional_everest_config_visitors = everest_config_visitors if everest_config_visitors else []
         self._everest_core = None
 
     def setup_environment(self, tmp_path: Path):
@@ -113,12 +122,11 @@ class EverestTestEnvironmentSetup:
 
         self._everest_core = EverestCore(self._core_config.everest_core_path,
                                          self._core_config.template_everest_config_path,
-                                         everest_configuration_adjustment_visitors=configuration_visitors,
+                                         everest_configuration_adjustment_visitors=configuration_visitors + self._additional_everest_config_visitors,
                                          standalone_module=self._standalone_module)
 
         if self._ocpp_config:
             self._setup_libocpp_configuration(
-                source_certs_directory=self._everest_core.etc_path / 'certs',
                 temporary_paths=temporary_paths
             )
 
@@ -180,8 +188,11 @@ class EverestTestEnvironmentSetup:
 
         return occp_module_configuration_helper
 
-    def _setup_libocpp_configuration(self, source_certs_directory: Path,
-                                     temporary_paths: _EverestEnvironmentTemporaryPaths):
+    def _setup_libocpp_configuration(self, temporary_paths: _EverestEnvironmentTemporaryPaths):
+
+        source_certs_directory = self._ocpp_config.source_certificates_directory \
+            if self._ocpp_config.source_certificates_directory \
+            else self._everest_core.etc_path / 'certs'
 
         liboccp_configuration_helper = LibOCPP16ConfigurationHelper() if self._ocpp_config.ocpp_version == OCPPVersion.ocpp16 else LibOCPP201ConfigurationHelper()
 
@@ -196,6 +207,7 @@ class EverestTestEnvironmentSetup:
 
         liboccp_configuration_helper.generate_ocpp_config(
             central_system_port=self._ocpp_config.central_system_port,
+            central_system_host=self._ocpp_config.central_system_host,
             source_ocpp_config_file=source_ocpp_config,
             target_ocpp_config_file=temporary_paths.ocpp_config_file,
             target_ocpp_user_config_file=temporary_paths.ocpp_user_config_file,
@@ -204,6 +216,9 @@ class EverestTestEnvironmentSetup:
         if self._ocpp_config.ocpp_version == OCPPVersion.ocpp201:
             liboccp_configuration_helper.create_temporary_ocpp_configuration_db(
                 libocpp_path=self._ocpp_config.libocpp_path,
+                device_model_schemas_path=self._ocpp_config.device_model_schemas_path \
+                    if self._ocpp_config.device_model_schemas_path \
+                    else self._ocpp_config.libocpp_path / 'config/v201/component_schemas',
                 ocpp_configuration_file=temporary_paths.ocpp_config_file,
                 target_directory=temporary_paths.ocpp_database_dir
             )
@@ -250,5 +265,7 @@ class EverestTestEnvironmentSetup:
     def _setup_evse_security_configuration(self, temporary_paths: _EverestEnvironmentTemporaryPaths):
         """ If configures, copies the source certificate trees"""
         if self._evse_security_config and self._evse_security_config.source_certificate_directory:
-            shutil.copytree(self._evse_security_config.source_certificate_directory / "ca", temporary_paths.certs_dir / "ca", dirs_exist_ok=True)
-            shutil.copytree(self._evse_security_config.source_certificate_directory / "client", temporary_paths.certs_dir / "client", dirs_exist_ok=True)
+            shutil.copytree(self._evse_security_config.source_certificate_directory / "ca",
+                            temporary_paths.certs_dir / "ca", dirs_exist_ok=True)
+            shutil.copytree(self._evse_security_config.source_certificate_directory / "client",
+                            temporary_paths.certs_dir / "client", dirs_exist_ok=True)

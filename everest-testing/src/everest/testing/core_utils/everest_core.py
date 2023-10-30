@@ -127,6 +127,11 @@ class EverestCore:
 
         self._standalone_module = standalone_module
 
+    @property
+    def everest_config(self) -> Dict:
+        with Path(self.temp_everest_config_file.name).open("r") as f:
+            return yaml.safe_load(f)
+
     def _write_temporary_config(self, template_config_path: Path, everest_configuration_adjustment_visitors: Optional[List[EverestConfigAdjustmentVisitor]]):
         everest_configuration_adjustment_visitors = everest_configuration_adjustment_visitors if everest_configuration_adjustment_visitors else []
         everest_configuration_adjustment_visitors.append(

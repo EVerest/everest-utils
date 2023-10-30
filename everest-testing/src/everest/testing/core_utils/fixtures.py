@@ -5,6 +5,8 @@ from typing import Optional
 
 import pytest
 
+from everest.testing.core_utils.configuration.everest_configuration_visitors.everest_configuration_visitor import \
+    EverestConfigAdjustmentVisitor
 from everest.testing.core_utils.configuration.everest_environment_setup import \
     EverestEnvironmentProbeModuleConfiguration, \
     EverestTestEnvironmentSetup, EverestEnvironmentOCPPConfiguration, EverestEnvironmentCoreConfiguration, \
@@ -74,13 +76,21 @@ def everest_core(request,
 
     standalone_module_marker = request.node.get_closest_marker('standalone_module')
 
+    additional_configuration_visitors = []
+    additional_configuration_visitors_marker = request.node.get_closest_marker('everest_config_adaptions')
+    if additional_configuration_visitors_marker:
+        for v in additional_configuration_visitors_marker.args:
+            assert isinstance(v, EverestConfigAdjustmentVisitor), "Arguments to 'everest_config_adaptions' must all be instances of EverestConfigAdjustmentVisitor"
+            additional_configuration_visitors.append(v)
+
     environment_setup = EverestTestEnvironmentSetup(
         core_config=core_config,
         ocpp_config=ocpp_config,
         probe_config=probe_module_config,
         evse_security_config=evse_security_config,
         persistent_store_config=persistent_store_config,
-        standalone_module=list(standalone_module_marker.args) if standalone_module_marker else None
+        standalone_module=list(standalone_module_marker.args) if standalone_module_marker else None,
+        everest_config_visitors=additional_configuration_visitors
     )
 
     environment_setup.setup_environment(tmp_path=tmp_path)

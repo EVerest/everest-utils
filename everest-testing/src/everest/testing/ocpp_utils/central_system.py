@@ -115,7 +115,7 @@ class CentralSystem:
         """
         self.ws_server = await websockets.serve(
             self.on_connect,
-            '127.0.0.1',
+            '0.0.0.0',
             self.port,
             subprotocols=[self.ocpp_version],
             ssl=ssl_context

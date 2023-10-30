@@ -54,6 +54,7 @@ class FirmwareInfo:
 @dataclass
 class OcppTestConfiguration:
     csms_port: str = 9000
+    csms_host: str = "0.0.0.0"
     charge_point_info: ChargePointInfo = ChargePointInfo()
     config_path: Optional[Path] = None
     authorization_info: Optional[AuthorizationInfo] = None
