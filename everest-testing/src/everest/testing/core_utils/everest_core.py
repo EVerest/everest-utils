@@ -10,7 +10,7 @@ import time
 import subprocess
 from pathlib import Path
 import tempfile
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict
 import uuid
 import yaml
 import selectors
