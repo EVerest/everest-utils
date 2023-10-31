@@ -35,7 +35,7 @@ class EvseSecurityModuleConfigurationVisitor(EverestConfigAdjustmentVisitor):
 
         Args:
             configuration: module configuration. If provided. this will be merged into the template configuration (meaning None values are ignored/taken from the originally provided Everest configuration)
-            module_id: Id of security module; if None, auto-detected by module type "EvseSecurity
+            module_id: Id of security module; if None, auto-detected by module type "EvseSecurity"
             target_certificates_directory: If provided, all configured certificate directories/paths will be changed to point into this folder
             source_certificates_directory: If provided, configured certificate directories/paths will be considered relative to this directory; each relative part is appended to the corresponding target paths
         """
