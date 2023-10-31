@@ -18,7 +18,8 @@ from signal import SIGINT
 
 from everest.framework import RuntimeSession
 from everest.testing.core_utils.common import Requirement
-from everest.testing.core_utils.configuration.everest_configuration_visitors.everest_configuration_visitor import EverestConfigAdjustmentVisitor
+from everest.testing.core_utils.configuration.everest_configuration_visitors.everest_configuration_visitor import \
+    EverestConfigAdjustmentVisitor
 from everest.testing.core_utils.configuration.everest_configuration_visitors.mqtt_configuration_visitor import \
     EverestMqttConfigurationAdjustmentVisitor
 from everest.testing.core_utils.configuration.everest_configuration_visitors.probe_module_configuration_visitor import \
@@ -26,16 +27,12 @@ from everest.testing.core_utils.configuration.everest_configuration_visitors.pro
 
 STARTUP_TIMEOUT = 30
 
-
-
-
-
 Connections = dict[str, List[Requirement]]
 
 
 class StatusFifoListener:
     def __init__(self, status_fifo_path: Path):
-        if (not status_fifo_path.exists()):
+        if not status_fifo_path.exists():
             os.mkfifo(status_fifo_path)
 
         # note: open doesn't support non-blocking, so we use os.open to get the fd
@@ -76,8 +73,6 @@ class StatusFifoListener:
                 return []
 
 
-
-
 class EverestCore:
     """This class can be used to configure, start and stop a full build of everest-core
     """
@@ -87,7 +82,8 @@ class EverestCore:
                  config_path: Path = None,
                  standalone_module: Optional[Union[str, List[str]]] = None,
                  everest_configuration_adjustment_visitors: Optional[
-                     List[EverestConfigAdjustmentVisitor]] = None) -> None:
+                     List[EverestConfigAdjustmentVisitor]] = None,
+                 tmp_path: Optional[Path] = None) -> None:
         """Initialize EVerest using everest_core_path and everest_config_path
 
         Args:
@@ -97,24 +93,33 @@ class EverestCore:
 
         self.process = None
         self.everest_uuid = uuid.uuid4().hex
-        self.temp_dir = Path(tempfile.mkdtemp(prefix=self.everest_uuid))
-        self.temp_everest_config_file = tempfile.NamedTemporaryFile(
-            delete=False, mode="w+", suffix=".yaml", dir=self.temp_dir)
-        self.everest_core_user_config_path = Path(
-            self.temp_everest_config_file.name).parent / 'user-config'
-        self.everest_core_user_config_path.mkdir(parents=True, exist_ok=True)
+
+        if not tmp_path:
+            temp_dir = Path(tempfile.mkdtemp(prefix=self.everest_uuid))
+            temp_everest_config_file = tempfile.NamedTemporaryFile(
+                delete=False, mode="w+", suffix=".yaml", dir=temp_dir)
+            self.everest_config_path = Path(temp_everest_config_file.name)
+            self.everest_core_user_config_path = Path(
+                temp_everest_config_file.name).parent / 'user-config'
+            self.everest_core_user_config_path.mkdir(parents=True, exist_ok=True)
+            self._status_fifo_path = temp_dir / "status.fifo"
+        else:
+            config_dir = tmp_path / "everest_config"
+            config_dir.mkdir()
+            self.everest_core_user_config_path = config_dir / "user-config"
+            self.everest_core_user_config_path.mkdir()
+            self.everest_config_path = config_dir / "everest_config.yaml"
+            self._status_fifo_path = tmp_path / "status.fifo"
+
         self.prefix_path = prefix_path
         self.etc_path = Path('/etc/everest') if prefix_path == '/usr' else prefix_path / 'etc/everest'
 
         if config_path is None:
             config_path = self.etc_path / 'config-sil.yaml'
 
-
         self.mqtt_external_prefix = f"external_{self.everest_uuid}"
 
         self._write_temporary_config(config_path, everest_configuration_adjustment_visitors)
-
-        self.everest_config_path = Path(self.temp_everest_config_file.name)
 
         logging.info(f"everest uuid: {self.everest_uuid}")
         logging.info(f"temp everest config: {self.everest_config_path} based on {config_path}")
@@ -129,10 +134,11 @@ class EverestCore:
 
     @property
     def everest_config(self) -> Dict:
-        with Path(self.temp_everest_config_file.name).open("r") as f:
+        with self.everest_config_path.open("r") as f:
             return yaml.safe_load(f)
 
-    def _write_temporary_config(self, template_config_path: Path, everest_configuration_adjustment_visitors: Optional[List[EverestConfigAdjustmentVisitor]]):
+    def _write_temporary_config(self, template_config_path: Path, everest_configuration_adjustment_visitors: Optional[
+        List[EverestConfigAdjustmentVisitor]]):
         everest_configuration_adjustment_visitors = everest_configuration_adjustment_visitors if everest_configuration_adjustment_visitors else []
         everest_configuration_adjustment_visitors.append(
             EverestMqttConfigurationAdjustmentVisitor(everest_uuid=self.everest_uuid,
@@ -140,7 +146,8 @@ class EverestCore:
         everest_config = yaml.safe_load(template_config_path.read_text())
         for visitor in everest_configuration_adjustment_visitors:
             everest_config = visitor.adjust_everest_configuration(everest_config)
-        yaml.dump(everest_config, self.temp_everest_config_file)
+        with self.everest_config_path.open("w") as f:
+            yaml.dump(everest_config, f)
 
     def start(self, standalone_module: Optional[Union[str, List[str]]] = None, test_connections: Connections = None):
         """Starts everest-core in a subprocess
@@ -160,12 +167,11 @@ class EverestCore:
         self.test_connections = test_connections if test_connections != None else {}
         self._create_testing_user_config()
 
-        status_fifo_path = self.temp_dir / "status.fifo"
-        self.status_listener = StatusFifoListener(status_fifo_path)
-        logging.info(status_fifo_path)
+        self.status_listener = StatusFifoListener(self._status_fifo_path)
+        logging.info(self._status_fifo_path)
 
         args = [str(manager_path.resolve()), '--config', str(self.everest_config_path),
-                '--status-fifo', str(status_fifo_path)]
+                '--status-fifo', str(self._status_fifo_path)]
 
         if standalone_module:
             logging.info(f"Standalone module {standalone_module} was specified")
@@ -236,7 +242,6 @@ class EverestCore:
 
         # FIXME (aw): we need some agreement, if the module id of the probe module should be fixed or not
         logging.info(f'Adding test control module(s) to user-config: {self.test_control_modules}')
-        user_config = {}
 
         user_config = ProbeModuleConfigurationVisitor(connections=self.test_connections)
 

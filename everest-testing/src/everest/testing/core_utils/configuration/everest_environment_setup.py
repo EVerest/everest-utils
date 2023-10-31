@@ -5,7 +5,7 @@ import logging
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional, Dict, List, Union, Literal
+from typing import Optional, Dict, List, Union
 
 import yaml
 
@@ -21,10 +21,9 @@ from everest.testing.core_utils.configuration.everest_configuration_visitors.per
     PersistentStoreConfigurationVisitor
 from everest.testing.core_utils.configuration.everest_configuration_visitors.probe_module_configuration_visitor import \
     ProbeModuleConfigurationVisitor
-
-from everest.testing.core_utils.everest_core import EverestCore, Requirement
 from everest.testing.core_utils.configuration.libocpp_configuration_helper import \
     LibOCPP201ConfigurationHelper, LibOCPP16ConfigurationHelper
+from everest.testing.core_utils.everest_core import EverestCore, Requirement
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -49,6 +48,8 @@ class EverestEnvironmentEvseSecurityConfiguration:
     use_temporary_certificates_folder: bool = True  # if true, configuration will be adapted to use temporary certifcates folder, this assumes a "default" file tree structure, cf. the EvseSecurityModuleConfiguration dataclass
     module_id: Optional[str] = None  # if None, auto-detected
     source_certificate_directory: Optional[Path] = None  # if provided, this will be copied to temporary path and
+    module_configuration: Optional[
+        EvseSecurityModuleConfiguration] = None  # if provided, will be merged into configuration; paths will be adapted if use_temporary_certificates_folder is true
 
 
 @dataclass
@@ -123,7 +124,8 @@ class EverestTestEnvironmentSetup:
         self._everest_core = EverestCore(self._core_config.everest_core_path,
                                          self._core_config.template_everest_config_path,
                                          everest_configuration_adjustment_visitors=configuration_visitors + self._additional_everest_config_visitors,
-                                         standalone_module=self._standalone_module)
+                                         standalone_module=self._standalone_module,
+                                         tmp_path=tmp_path)
 
         if self._ocpp_config:
             self._setup_libocpp_configuration(
@@ -232,11 +234,15 @@ class EverestTestEnvironmentSetup:
                 ProbeModuleConfigurationVisitor(connections=self._probe_config.connections,
                                                 module_id=self._probe_config.module_id))
 
-        if self._evse_security_config and self._evse_security_config.use_temporary_certificates_folder:
+        if self._evse_security_config:
             configuration_visitors.append(
                 EvseSecurityModuleConfigurationVisitor(module_id=self._evse_security_config.module_id,
-                                                       configuration=EvseSecurityModuleConfiguration.default_from_cert_path(
-                                                           temporary_paths.certs_dir)))
+                                                       configuration=self._evse_security_config.module_configuration,
+                                                       source_certificates_directory=self._evse_security_config.source_certificate_directory,
+                                                       target_certificates_directory=temporary_paths.certs_dir \
+                                                           if self._evse_security_config.use_temporary_certificates_folder \
+                                                           else None
+                                                       ))
 
         if self._persistent_store_config and self._persistent_store_config.use_temporary_folder:
             configuration_visitors.append(
@@ -265,7 +271,4 @@ class EverestTestEnvironmentSetup:
     def _setup_evse_security_configuration(self, temporary_paths: _EverestEnvironmentTemporaryPaths):
         """ If configures, copies the source certificate trees"""
         if self._evse_security_config and self._evse_security_config.source_certificate_directory:
-            shutil.copytree(self._evse_security_config.source_certificate_directory / "ca",
-                            temporary_paths.certs_dir / "ca", dirs_exist_ok=True)
-            shutil.copytree(self._evse_security_config.source_certificate_directory / "client",
-                            temporary_paths.certs_dir / "client", dirs_exist_ok=True)
+            shutil.copytree(self._evse_security_config.source_certificate_directory, temporary_paths.certs_dir, dirs_exist_ok=True)

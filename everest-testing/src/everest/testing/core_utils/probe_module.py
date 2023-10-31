@@ -43,7 +43,7 @@ class ProbeModule:
         except Exception as e:
             logging.info(f"Exception in calling {connection_id}.{command_name}: {type(e)}: {e}")
 
-    def implement_command(self, implementation_id: str, command_name: str, handler: Callable[[dict], dict]):
+    def implement_command(self, implementation_id: str, command_name: str, handler: Callable[[dict], Any]):
         """
         Set up an implementation for a command.
         - implementation_id: the id of the implementation, as used by other modules requiring it in the runtime config
@@ -62,7 +62,7 @@ class ProbeModule:
         """
         self._mod.implement_command(implementation_id, command_name, handler)
 
-    def publish_variable(self, implementation_id: str, variable_name: str, value: dict | str):
+    def publish_variable(self, implementation_id: str, variable_name: str, value: Any):
         """
         Publish a variable from an interface the probe module implements.
         - implementation_id: the id of the implementation, as used by other modules requiring it in the runtime config

@@ -1,7 +1,7 @@
 from copy import deepcopy
 from dataclasses import dataclass, asdict
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 from everest.testing.core_utils.configuration.everest_configuration_visitors.everest_configuration_visitor import \
     EverestConfigAdjustmentVisitor
@@ -19,41 +19,47 @@ class EvseSecurityModuleConfiguration:
     secc_leaf_key_directory: Optional[str] = None
     private_key_password: Optional[str] = None
 
-    @staticmethod
-    def default_from_cert_path(certs_directory: Path):
-        """ Return a default definition of bundles and directory given base directory. """
-        return EvseSecurityModuleConfiguration(
-            csms_ca_bundle=str(certs_directory / "ca/csms/CSMS_ROOT_CA.pem"),
-            mf_ca_bundle=str(certs_directory / "ca/mf/MF_ROOT_CA.pem"),
-            mo_ca_bundle=str(certs_directory / "ca/mo/MO_ROOT_CA.pem"),
-            v2g_ca_bundle=str(certs_directory / "ca/v2g/V2G_ROOT_CA.pem"),
-            csms_leaf_cert_directory=str(certs_directory / "client/csms"),
-            csms_leaf_key_directory=str(certs_directory / "client/csms"),
-            secc_leaf_cert_directory=str(certs_directory / "client/cso"),
-            secc_leaf_key_directory=str(certs_directory / "client/cso"),
-        )
-
-    def to_module_configuration(self) -> Dict:
-        return {k: v for k, v in asdict(self).items() if v is not None}
-
 
 class EvseSecurityModuleConfigurationVisitor(EverestConfigAdjustmentVisitor):
-    """ Adjusts the Everest configuration by manipulating the evse security module configuration to point
-    to the correct (temporary) certificate paths.
-
+    """ Adjusts the Evse security module configuration in the Everest configuration merging a provided configuration into it (if provided) and adapt
+    all paths relative to a certificate target directory (if provided).
     """
 
     def __init__(self,
-                 configuration: EvseSecurityModuleConfiguration,
-                 module_id: Optional[str] = None):
+                 configuration: Optional[EvseSecurityModuleConfiguration] = None,
+                 target_certificates_directory: Optional[Path] = None,
+                 source_certificates_directory: Optional[Path] = None,
+                 module_id: Optional[str] = None
+                 ):
         """
 
         Args:
-            configuration: module configuration. This will be merged into the template configuration (meaning None values are ignored/taken from the originally provided Everest configuration)
+            configuration: module configuration. If provided. this will be merged into the template configuration (meaning None values are ignored/taken from the originally provided Everest configuration)
             module_id: Id of security module; if None, auto-detected by module type "EvseSecurity
+            target_certificates_directory: If provided, all configured certificate directories/paths will be changed to point into this folder
+            source_certificates_directory: If provided, configured certificate directories/paths will be considered relative to this directory; each relative part is appended to the corresponding target paths
         """
         self._security_module_id = module_id
         self._configuration = configuration
+        self._target_certificates_directory = target_certificates_directory
+        self._source_certificates_directory = source_certificates_directory
+
+    def _move_paths(self, module_config: Dict):
+        def _move(p: Union[str, Path]):
+            if self._source_certificates_directory and Path(p).is_relative_to(self._source_certificates_directory):
+                p = Path(p).relative_to(self._source_certificates_directory)
+            return str(self._target_certificates_directory / p)
+
+        for k in {"csms_ca_bundle",
+                   "mf_ca_bundle",
+                   "mo_ca_bundle",
+                   "v2g_ca_bundle",
+                   "csms_leaf_cert_directory",
+                   "csms_leaf_key_directory",
+                   "secc_leaf_cert_directory",
+                   "secc_leaf_key_directory"}:
+            if module_config["config_module"].get(k):
+                module_config["config_module"][k] = _move(module_config["config_module"][k])
 
     def _determine_module_id(self, everest_config: Dict):
         if self._security_module_id:
@@ -72,7 +78,12 @@ class EvseSecurityModuleConfigurationVisitor(EverestConfigAdjustmentVisitor):
 
         module_cfg = adjusted_config["active_modules"][self._determine_module_id(adjusted_config)]
 
-        module_cfg["config_module"] = {**module_cfg["config_module"],
-                                       **self._configuration.to_module_configuration()}
+        if self._configuration:
+            module_cfg["config_module"] = {**module_cfg["config_module"],
+                                           **{k:v for k,v in asdict(self._configuration).items()
+                                              if v is not None}}
+
+        if self._target_certificates_directory:
+            self._move_paths(module_cfg)
 
         return adjusted_config
