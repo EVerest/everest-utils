@@ -21,6 +21,7 @@ import argparse
 import stringcase
 from typing import List
 
+
 # FIXME (aw): remove these global variables
 
 # global variables
@@ -60,9 +61,7 @@ def setup_jinja_env():
     })
 
 
-def generate_tmpl_data_for_if(interface, if_def, type_file, if_path):
-    if_path = helpers.resolve_everest_dir_path(f'interfaces/{interface}.yaml')
-    base_uri = if_path.as_uri()
+def generate_tmpl_data_for_if(interface, if_def, type_file):
     helpers.parsed_enums.clear()
     helpers.parsed_types.clear()
     helpers.type_headers.clear()
@@ -331,9 +330,9 @@ def generate_module_files(rel_mod_dir, update_flag):
         (impl_hpp_file, impl_cpp_file) = construct_impl_file_paths(impl)
 
         # load template data for interface
-        if_def, if_path, last_mtime = load_interface_definition(interface)
+        if_def, last_mtime = load_interface_definition(interface)
 
-        if_tmpl_data = generate_tmpl_data_for_if(interface, if_def, False, if_path)
+        if_tmpl_data = generate_tmpl_data_for_if(interface, if_def, False)
 
         if_tmpl_data['info'].update({
             'hpp_guard': helpers.snake_case(f'{impl["id"]}_{interface}').upper() + '_IMPL_HPP',
@@ -428,14 +427,14 @@ def load_interface_definition(interface):
 
     last_mtime = if_path.stat().st_mtime
 
-    return if_def, if_path, last_mtime
+    return if_def, last_mtime
 
 
 def generate_interface_headers(interface, all_interfaces_flag, output_dir):
     if_parts = {'base': None, 'exports': None, 'types': None}
 
     try:
-        if_def, if_path, last_mtime = load_interface_definition(interface)
+        if_def, last_mtime = load_interface_definition(interface)
     except Exception as e:
         if not all_interfaces_flag:
             raise
@@ -444,7 +443,7 @@ def generate_interface_headers(interface, all_interfaces_flag, output_dir):
             print(f'Ignoring interface {interface} with reason: {e}')
             return
 
-    tmpl_data = generate_tmpl_data_for_if(interface, if_def, False, if_path)
+    tmpl_data = generate_tmpl_data_for_if(interface, if_def, False)
 
     output_path = output_dir / interface
     output_path.mkdir(parents=True, exist_ok=True)
@@ -613,25 +612,6 @@ def helpers_json2yaml(args):
     helpers.json2yaml(Path(args.input).resolve(), Path(args.output).resolve())
 
 
-def helpers_convert_refs(args):
-    print(f'Converting references in yaml file {args.input} and writing to {args.output}')
-    if (not args.input.exists()):
-        raise Exception(f'Input file {args.input} does not exist')
-    if (not args.output.parent.exists()):
-        args.output.parent.mkdir(parents=True, exist_ok=False)
-    base_path = args.base_path
-    if (base_path == None):
-        base_path = args.output
-
-    file_content = args.input.read_text()
-    if (args.input.parent.stem == 'types'):
-        file_content = helpers.convert_refs(file_content, helpers.convert_in_types_file)
-    elif (args.input.parent.stem == 'interfaces'):
-        file_content = helpers.convert_refs(file_content, helpers.convert_in_interface_file)
-    file_content = helpers.use_abs_refs(file_content, base_path.resolve())
-
-    args.output.write_text(file_content)
-
 def list_types_with_namespace(types=None) -> List:
     if not types:
         types = []
@@ -654,8 +634,8 @@ def list_types_with_namespace(types=None) -> List:
             uppercase_path.append(stringcase.capitalcase(part))
         namespace = '::'.join(relative_path.parts)
         type_with_namespace = {
-            'abs_path': type_path.resolve(),
-            'rel_path': relative_path,
+            'path': type_path,
+            'relative_path': relative_path,
             'namespace': namespace,
             'uppercase_path': uppercase_path,
         }
@@ -772,12 +752,6 @@ def main():
     hlp_json2yaml_parser.add_argument('input', type=str, help='path to json input file')
     hlp_json2yaml_parser.add_argument('output', type=str, help='path to yaml output file')
     hlp_json2yaml_parser.set_defaults(action_handler=helpers_json2yaml)
-
-    hlp_convert_refs_parser = hlp_actions.add_parser('convert-refs', help='convert relative refs to absolute refs')
-    hlp_convert_refs_parser.add_argument('input', type=Path, help='path to yaml input file')
-    hlp_convert_refs_parser.add_argument('output', type=Path, help='path to yaml output file')
-    hlp_convert_refs_parser.add_argument('--base-path', dest='base_path', type=Path, help='base directory for relative refs', default=None)
-    hlp_convert_refs_parser.set_defaults(action_handler=helpers_convert_refs)
 
     types_actions = parser_types.add_subparsers(metavar='<action>', help='available actions', required=True)
     types_genhdr_parser = types_actions.add_parser(
