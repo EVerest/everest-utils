@@ -8,48 +8,77 @@ Provide error parsing functionality.
 author: andreas.heinrich@pionix.de
 """
 
+from typing import List, NamedTuple
+from pathlib import Path
 from . import helpers
+import yaml, jsonschema
 
-from typing import Dict, List
-
-import yaml, jsonref
+class ErrorDefinition(NamedTuple):
+    """Error definition class."""
+    namespace: str
+    name: str
+    description: str
 
 class ErrorParser:
     """Error parser class."""
-    validators: Dict = {}
-    generated_template_data: Dict = {}
+    validators = None
+    error_definitions = {}
 
     @classmethod
-    def extract_namespace(cls, ref: str) -> str:
-        namespace = None
-        if '#/' in ref:
-            namespace = ref.split('#/')[0]
-        namespace = namespace.split('/')[-1]
-        namespace = namespace.split('.')[0]
-        return namespace
+    def load_error_definition_file(cls, path: Path):
+        try:
+            error_def = yaml.safe_load(path.read_text())
+            ErrorParser.validators['error_declaration_list'].validate(error_def)
+        except OSError as err:
+            raise Exception(f'Could not open error definition file {err.filename}: {err.strerror}') from err
+        except yaml.YAMLError as err:
+            raise Exception(f'Could not parse error definition file {path}: {err}') from err
+        except jsonschema.ValidationError as err:
+            raise Exception(f'Error definition file {path} is not valid: {err}') from err
+
+        namespace = path.stem
+        if namespace in cls.error_definitions:
+            raise Exception(f'Error definition namespace { namespace } already exists.')
+        else:
+            cls.error_definitions[namespace] = {}
+        for entry in error_def['errors']:
+            error = ErrorDefinition(namespace, entry['name'], entry['description'])
+            if error.name in cls.error_definitions[error.namespace]:
+                raise Exception(f'Error definition { error.namespace }/{ error.name } already exists.')
+            cls.error_definitions[error.namespace][error.name] = error
 
     @classmethod
-    def generate_template_data(cls, data: Dict, namespace: str) -> Dict:
-        """Generate template data for the provided error declaration."""
-        return {
-            'namespace': namespace,
-            'name': data['name'],
-            'description': data['description']
-        }
+    def get_error_definition(cls, namespace: str, name: str) -> ErrorDefinition:
+        """Get error definition for the provided namespace and name."""
+        if namespace not in cls.error_definitions:
+            path = helpers.resolve_everest_dir_path(f'errors/{ namespace }.yaml')
+            cls.load_error_definition_file(path)
+        if name not in cls.error_definitions[namespace]:
+            raise Exception(f'Error definition { namespace }/{ name } does not exist.')
+        return cls.error_definitions[namespace][name]
 
     @classmethod
-    def generate_template_data_list(cls, data: List[Dict], base_uri) -> List[Dict]:
-        """Generate template data list for the provided data."""
+    def get_error_definitions(cls, namespace: str) -> List[ErrorDefinition]:
+        """Get error definitions for the provided namespace."""
+        if namespace not in cls.error_definitions:
+            path = helpers.resolve_everest_dir_path(f'errors/{ namespace }.yaml')
+            cls.load_error_definition_file(path)
         result = []
-        for entry in data:
-            if not entry['$ref']:
-                raise helpers.EVerestParsingException(f'Error list: { entry } needs to include "$ref" as a key.')
-            namespace = cls.extract_namespace(entry['$ref'])
-            entry_data = jsonref.replace_refs(entry, base_uri=base_uri, loader=helpers.yaml_ref_loader, proxies=False)
-            if isinstance(entry_data, list):
-                for error_declaration in entry_data:
-                    print(yaml.dump(error_declaration))
-                    result.append(cls.generate_template_data(error_declaration, namespace))
-            else:
-                result.append(cls.generate_template_data(entry_data, namespace))
+        for error in cls.error_definitions[namespace].values():
+            result.append(error)
         return result
+
+    @classmethod
+    def resolve_error_reference(cls, error_ref: str) -> List[ErrorDefinition]:
+        """Resolve error reference."""
+        ref_prefix = '/errors/'
+        if not error_ref.startswith(ref_prefix):
+            raise Exception(f'Error reference { error_ref } does not start with { ref_prefix }.')
+        error_ref = error_ref[len(ref_prefix):]
+        if '#/' in error_ref:
+            namespace, name = error_ref.split('#/')
+            result = []
+            result.append(cls.get_error_definition(namespace, name))
+            return result
+        else:
+            return cls.get_error_definitions(error_ref)

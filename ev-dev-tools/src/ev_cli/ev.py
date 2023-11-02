@@ -75,9 +75,6 @@ def generate_tmpl_data_for_if(interface, if_def, type_file):
 
         vars.append(type_info)
 
-    error_lists = if_def.get('errors', [])
-    errors = ErrorParser.generate_template_data_list(error_lists, base_uri)
-
     cmds = []
     for cmd, cmd_info in if_def.get('cmds', {}).items():
         args = []
@@ -119,6 +116,22 @@ def generate_tmpl_data_for_if(interface, if_def, type_file):
                         helpers.type_headers.add(path.as_posix())
 
             types.append(parsed_type)
+
+    error_lists = if_def.get('errors', [])
+    # Use a dict to avoid duplicate error definitions
+    errors_dict = {}
+    for entry in error_lists:
+        if not 'reference' in entry:
+            raise Exception(f'Error definition {entry} does not have a reference.')
+        for error in ErrorParser.resolve_error_reference(entry['reference']):
+            if error.namespace not in errors_dict:
+                errors_dict[error.namespace] = {}
+            if error.name in errors_dict[error.namespace]:
+                raise Exception(f'Error definition {error.namespace}/{error.name} already referenced.')
+            errors_dict[error.namespace][error.name] = error
+    errors = []
+    for value in errors_dict.values():
+        errors.extend(value.values())
 
     tmpl_data = {
         'info': {
