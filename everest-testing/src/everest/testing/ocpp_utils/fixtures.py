@@ -7,6 +7,7 @@ import socket
 import ssl
 import sys
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 from threading import Thread
 
@@ -52,13 +53,22 @@ async def central_system(request, ocpp_version: OCPPVersion, test_config):
     """Fixture for CentralSystem. Can be started as TLS or
         plain websocket depending on the request parameter.
     """
-    if (hasattr(request, 'param')):
+
+    # Determine CSMS SSL Context: Default take from test_config, can be overwritten by csms_tls marker
+    csms_tls_marker = request.node.get_closest_marker("csms_tls")
+    csms_tls_marker_tls_enabled = csms_tls_marker and not csms_tls_marker.args[0:1] == [False]  # explicit enable tls by marker; this is the case if marker is set and first argument is not "False"
+    csms_tls_marker_tls_disabled = csms_tls_marker and csms_tls_marker.args[0:1] == [False]  # explicit disable tls by marker, overwrites test_config
+    if csms_tls_marker_tls_enabled or (test_config.csms_tls_enabled and not csms_tls_marker_tls_disabled):
+
+        # if tls enabled, marker options and test_config are merged; marker options overwrite test_config options
+        csms_tls_marker_kwargs = csms_tls_marker.kwargs if csms_tls_marker else {}
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        ssl_context.load_cert_chain(test_config.certificate_info.csms_cert,
-                                    test_config.certificate_info.csms_key,
-                                    test_config.certificate_info.csms_passphrase)
+        ssl_context.load_cert_chain(csms_tls_marker_kwargs.get("certificate", test_config.certificate_info.csms_cert),
+                                    csms_tls_marker_kwargs.get("private_key",  test_config.certificate_info.csms_key),
+                                    csms_tls_marker_kwargs.get("passphrase", test_config.certificate_info.csms_passphrase))
     else:
         ssl_context = None
+
     cs = CentralSystem(test_config.charge_point_info.charge_point_id,
                        ocpp_version=ocpp_version)
 
