@@ -20,7 +20,8 @@ from pyftpdlib.handlers import FTPHandler
 from everest.testing.core_utils.common import OCPPVersion
 from everest.testing.core_utils.configuration.everest_environment_setup import EverestEnvironmentOCPPConfiguration
 from everest.testing.core_utils.controller.everest_test_controller import EverestTestController
-from everest.testing.ocpp_utils.central_system import CentralSystem, inject_csms_v201_mock, inject_csms_v16_mock
+from everest.testing.ocpp_utils.central_system import CentralSystem, inject_csms_v201_mock, inject_csms_v16_mock, \
+    determine_ssl_context
 from everest.testing.ocpp_utils.charge_point_utils import TestUtility, OcppTestConfiguration
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
@@ -54,20 +55,7 @@ async def central_system(request, ocpp_version: OCPPVersion, test_config):
         plain websocket depending on the request parameter.
     """
 
-    # Determine CSMS SSL Context: Default take from test_config, can be overwritten by csms_tls marker
-    csms_tls_marker = request.node.get_closest_marker("csms_tls")
-    csms_tls_marker_tls_enabled = csms_tls_marker and not csms_tls_marker.args[0:1] == [False]  # explicit enable tls by marker; this is the case if marker is set and first argument is not "False"
-    csms_tls_marker_tls_disabled = csms_tls_marker and csms_tls_marker.args[0:1] == [False]  # explicit disable tls by marker, overwrites test_config
-    if csms_tls_marker_tls_enabled or (test_config.csms_tls_enabled and not csms_tls_marker_tls_disabled):
-
-        # if tls enabled, marker options and test_config are merged; marker options overwrite test_config options
-        csms_tls_marker_kwargs = csms_tls_marker.kwargs if csms_tls_marker else {}
-        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        ssl_context.load_cert_chain(csms_tls_marker_kwargs.get("certificate", test_config.certificate_info.csms_cert),
-                                    csms_tls_marker_kwargs.get("private_key",  test_config.certificate_info.csms_key),
-                                    csms_tls_marker_kwargs.get("passphrase", test_config.certificate_info.csms_passphrase))
-    else:
-        ssl_context = None
+    ssl_context = determine_ssl_context(request, test_config)
 
     cs = CentralSystem(test_config.charge_point_info.charge_point_id,
                        ocpp_version=ocpp_version)
