@@ -216,10 +216,16 @@ def determine_ssl_context(request: FixtureRequest, test_config: OcppTestConfigur
     """ Determine CSMS SSL Context: Default take from test_config, can be overwritten by csms_tls marker """
 
     csms_tls_enabled = test_config.csms_tls_enabled
-    csms_tls_cert = test_config.certificate_info.csms_cert
-    csms_tls_key = test_config.certificate_info.csms_key
-    csms_tls_passphrase = test_config.certificate_info.csms_passphrase
-    csms_tls_root_ca = test_config.certificate_info.csms_root_ca
+    if test_config.certificate_info:
+        csms_tls_cert = test_config.certificate_info.csms_cert
+        csms_tls_key = test_config.certificate_info.csms_key
+        csms_tls_passphrase = test_config.certificate_info.csms_passphrase
+        csms_tls_root_ca = test_config.certificate_info.csms_root_ca
+    else:
+        csms_tls_cert = None
+        csms_tls_key = None
+        csms_tls_passphrase = None
+        csms_tls_root_ca = None
     csms_tls_verify_client_certificate = test_config.csms_tls_verify_client_certificate
 
     if csms_tls_marker := request.node.get_closest_marker("csms_tls"):
