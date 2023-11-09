@@ -13,7 +13,6 @@ class OCPPConfigAdjustmentVisitor(ABC):
     @abstractmethod
     def adjust_ocpp_configuration(self, config: dict) -> dict:
         """ Adjusts the provided configuration by making a (deep) copy and returning the adjusted configuration. """
-        pass
 
 
 class OCPPConfigAdjustmentVisitorWrapper(OCPPConfigAdjustmentVisitor):
