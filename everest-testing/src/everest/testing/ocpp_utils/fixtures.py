@@ -46,7 +46,7 @@ def ocpp_config(request, central_system: CentralSystem, test_config: OcppTestCon
         for v in ocpp_configuration_visitors_marker.args:
             assert hasattr(v,
                            "adjust_ocpp_configuration"), "Arguments to 'ocpp_config_adaptions' must all provide interface of OCPPConfigAdjustmentVisitor"
-            ocpp_configuration_visitors_marker.append(v)
+            ocpp_configuration_visitors.append(v)
 
     return EverestEnvironmentOCPPConfiguration(
         central_system_port=central_system.port,

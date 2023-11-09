@@ -16,14 +16,13 @@ class OCPPConfigAdjustmentVisitor(ABC):
         pass
 
 
-class OCPPConfigAdjustmentWrapper(OCPPConfigAdjustmentVisitor):
+class OCPPConfigAdjustmentVisitorWrapper(OCPPConfigAdjustmentVisitor):
     """ Simple OCPPConfigAdjustmentVisitor from a callback function.
     """
 
     def __init__(self, callback: Callable[[dict], dict]):
         self._callback = callback
 
-    @abstractmethod
     def adjust_ocpp_configuration(self, config: dict) -> dict:
         """ Adjusts the provided configuration by making a (deep) copy and returning the adjusted configuration. """
         config = deepcopy(config)
@@ -66,7 +65,7 @@ class LibOCPP16ConfigurationHelper(LibOCPPConfigurationHelperBase):
                 "CentralSystemURI"] = f"{central_system_host}:{central_system_port}/{charge_point_id}"
             return config
 
-        return OCPPConfigAdjustmentWrapper(adjust_ocpp_configuration)
+        return OCPPConfigAdjustmentVisitorWrapper(adjust_ocpp_configuration)
 
 
 class _DefaultOCPP201ConfigurationVisitor(OCPPConfigAdjustmentVisitor):
