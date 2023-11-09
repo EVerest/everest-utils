@@ -67,7 +67,12 @@ class LibOCPP16ConfigurationHelper(LibOCPPConfigurationHelperBase):
         return OCPPConfigAdjustmentVisitorWrapper(adjust_ocpp_configuration)
 
 
-class _DefaultOCPP201ConfigurationVisitor(OCPPConfigAdjustmentVisitor):
+class _OCPP201NetworkConnectionProfileAdjustment(OCPPConfigAdjustmentVisitor):
+    """ Adjusts the OCPP 2.0.1 Network Connection Profile by injecting the right host, port and chargepoint id.
+
+    This is utilized by the `LibOCPP201ConfigurationHelper`.
+
+    """
 
     def __init__(self, central_system_port: int | str, central_system_host: str):
         self._central_system_port = central_system_port
@@ -106,7 +111,7 @@ class LibOCPP201ConfigurationHelper(LibOCPPConfigurationHelperBase):
 
     def _get_default_visitor(self, central_system_port: int | str,
                              central_system_host: str) -> OCPPConfigAdjustmentVisitor:
-        return _DefaultOCPP201ConfigurationVisitor(central_system_port, central_system_host)
+        return _OCPP201NetworkConnectionProfileAdjustment(central_system_port, central_system_host)
 
     @staticmethod
     def create_temporary_ocpp_configuration_db(libocpp_path: Path,
