@@ -18,6 +18,7 @@ class ProbeModule:
         Construct a probe module and connect it to EVerest.
         - session: runtime session information (path to EVerest installation and location of run config file)
         - module_id: the module ID to register with EVerest. By default, this will be "probe".
+        - start: whether to start the module immediately. Set to false if you need to add implementations or subscriptions before starting.
         """
         logging.info("ProbeModule init start")
         m = Module(module_id, session)
