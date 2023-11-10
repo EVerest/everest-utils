@@ -13,7 +13,7 @@ class ProbeModule:
     but you do not need to specify the interfaces provided by the probe - simply specify the implementation ID when registering cmd handlers and publishing vars.
     """
 
-    def __init__(self, session: RuntimeSession, module_id="probe"):
+    def __init__(self, session: RuntimeSession, module_id="probe", start=True):
         """
         Construct a probe module and connect it to EVerest.
         - session: runtime session information (path to EVerest installation and location of run config file)
@@ -24,10 +24,17 @@ class ProbeModule:
         self._setup = m.say_hello()
         self._mod = m
         self._ready_event = asyncio.Event()
+        self._started = False
 
-        # subscribe to session events
-        m.init_done(self._ready)
-        logging.info("Probe module initialized")
+        if start:
+            self.start()
+
+    def start(self):
+        if not self._started:
+            self._started = True
+            # subscribe to session events
+            self._mod.init_done(self._ready)
+            logging.info("Probe module initialized")
 
     async def call_command(self, connection_id: str, command_name: str, args: dict) -> Any:
         """
