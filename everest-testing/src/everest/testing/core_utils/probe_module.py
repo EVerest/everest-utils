@@ -13,7 +13,7 @@ class ProbeModule:
     but you do not need to specify the interfaces provided by the probe - simply specify the implementation ID when registering cmd handlers and publishing vars.
     """
 
-    def __init__(self, session: RuntimeSession, module_id="probe", start=True):
+    def __init__(self, session: RuntimeSession, module_id="probe"):
         """
         Construct a probe module and connect it to EVerest.
         - session: runtime session information (path to EVerest installation and location of run config file)
@@ -26,9 +26,6 @@ class ProbeModule:
         self._mod = m
         self._ready_event = asyncio.Event()
         self._started = False
-
-        if start:
-            self.start()
 
     def start(self):
         if not self._started:
@@ -110,5 +107,8 @@ class ProbeModule:
     async def wait_to_be_ready(self, timeout=3):
         """
         Convenience method which allows you to wait until the _ready() callback is triggered (i.e. until EVerest is up and running)
+        Additionally starts the module if it wasn't started explicitly via start() already.
         """
+        if not self._started:
+            self.start()
         await asyncio.wait_for(self._ready_event.wait(), timeout)
