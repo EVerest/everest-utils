@@ -107,8 +107,8 @@ class ProbeModule:
     async def wait_to_be_ready(self, timeout=3):
         """
         Convenience method which allows you to wait until the _ready() callback is triggered (i.e. until EVerest is up and running)
-        Additionally starts the module if it wasn't started explicitly via start() already.
         """
         if not self._started:
-            self.start()
+            raise RuntimeError("Called wait_to_be_ready(), but probe module has not been started yet! "
+                               "Please use start() to start the module first.")
         await asyncio.wait_for(self._ready_event.wait(), timeout)
