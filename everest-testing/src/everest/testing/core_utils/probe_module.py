@@ -28,11 +28,12 @@ class ProbeModule:
         self._started = False
 
     def start(self):
-        if not self._started:
-            self._started = True
-            # subscribe to session events
-            self._mod.init_done(self._ready)
-            logging.info("Probe module initialized")
+        if self._started:
+            raise RuntimeError("Called start(), but ProbeModule is started already!")
+        self._started = True
+        # subscribe to session events
+        self._mod.init_done(self._ready)
+        logging.info("Probe module initialized")
 
     async def call_command(self, connection_id: str, command_name: str, args: dict) -> Any:
         """
