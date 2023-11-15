@@ -66,7 +66,7 @@ everest playground
 
 If you would like to get a pre-configured development setup using
 *vscode* for the *everest-cpp* framework, you need to start up the mqtt
-server with:
+server with::
 
     docker-compose up -d mqtt-server
 
