@@ -15,7 +15,7 @@ class ProbeModule:
 
     def __init__(self, session: RuntimeSession, module_id="probe"):
         """
-        Construct a probe module and connect it to EVerest.
+        Construct a probe module and connect it to EVerest. This does not mark the module as ready yet.
         - session: runtime session information (path to EVerest installation and location of run config file)
         - module_id: the module ID to register with EVerest. By default, this will be "probe".
         - start: whether to start the module immediately. Set to false if you need to add implementations or subscriptions before starting.
@@ -28,6 +28,10 @@ class ProbeModule:
         self._started = False
 
     def start(self):
+        """
+        Send the "ready" signal for the probe module.
+        You should do this after implementing all commands needed in your test.
+        """
         if self._started:
             raise RuntimeError("Called start(), but ProbeModule is started already!")
         self._started = True
