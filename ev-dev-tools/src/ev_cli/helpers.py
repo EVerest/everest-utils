@@ -74,6 +74,8 @@ def create_dummy_result(json_type) -> str:
             return '3.14'
         elif type == 'string':
             return '"everest"'
+        elif type == 'array':
+            return '{}'
         elif type == 'object':
             return '{}'
         else:
