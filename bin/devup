@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+##################################################################
 # Check that docker is installed
 if ! command -v docker &> /dev/null
 then
@@ -7,22 +8,34 @@ then
     exit 1
 fi
 
+##################################################################
+# Check that the EV_HOME Environment Variable is set
 if [[ -z "${EV_HOME}" ]]; then
   echo "EV_HOME is not defined"
   exit 1
+  # TODO: Maybe have this trigger a default of . ?
 else
   EVerestDevHome="${EV_HOME}"
 fi
 
 echo "EV_HOME set to ${EVerestDevHome}"
 
+##################################################################
+# Check that the everest-utils repo is under EV_HOME 
 if [ ! -d "${EVerestDevHome}/everest-utils" ]; then
   echo "everest-utils is not checked out"
   exit 1
 fi
 
+##################################################################
+# Setup Docker network if not there
 echo "Attempting to create docker network infranet_network"
 
 docker network create --driver bridge --ipv6  --subnet fd00::/80 infranet_network --attachable || true
 
-docker compose -f "${EVerestDevHome}/everest-utils/docker/docker-compose-dev.yml" up -d mqtt-server && docker compose -f "${EVerestDevHome}/everest-utils/docker/docker-compose-dev.yml" up -d nodered
+##################################################################
+# Standup Dev Docker Compose Environment
+echo "Standing up Dev Everest Docker Playground"
+
+docker compose -f "${EVerestDevHome}/everest-utils/docker/docker-compose-dev.yml" up -d mqtt-server 
+docker compose -f "${EVerestDevHome}/everest-utils/docker/docker-compose-dev.yml" up -d nodered
