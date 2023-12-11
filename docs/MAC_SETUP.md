@@ -69,6 +69,7 @@ This will open your VSCode environment inside the EVerest Playground:
 
 ![VSCode Playground Folder](images/vscode_dev_playground.png "VSCode Playground Folder")
 
+You are now ready to go!
 
 ### Stopping things
 
