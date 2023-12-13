@@ -49,36 +49,55 @@ docker network create --driver bridge --ipv6  --subnet fd00::/80 infranet_networ
 
 ### Start up the docker EVerest Playground
 
-docker compose -f ./everest-utils/docker/docker-compose-dev.yml" up -d mqtt-server 
-docker compose -f ./everest-utils/docker/docker-compose-dev.yml" up -d nodered
+docker compose -f ./everest-utils/docker/docker-compose.yml" up -d mqtt-server 
+docker compose -f ./everest-utils/docker/docker-compose.yml" up -d nodered
 
-## Start VSCode Docker Dev Env
+## Start VSCode Docker Dev Environment
 
 In VSCode:
 
 * Press `CMD + Shift + P`
 * type `Dev Containers: Open Folder in Container...`
+* Navigate and open the docker/everest-playground folder. 
 
-![VSCode Command Pallet](images/vscode_command_pallet.png "VSCode Command Pallet")
+This will open the EVerest Playground as a VSCode dev container. You should now be ready to go.
 
-* Navigate and open the docker/everest-playground-joet folder
+## Initialize 
 
-![VSCode Playground Folder](images/vscode_folder_select.png "VSCode Playground Folder")
+Now we run commands inside the Playground based on the instructions from the [`everest-cpp`](/everest-cpp/README.md)
+subdirectory.
 
-This will open your VSCode environment inside the EVerest Playground:
+Initialize the EVerest workspace sourcing the *[init.sh](./init.sh)* file:
 
-![VSCode Playground Folder](images/vscode_dev_playground.png "VSCode Playground Folder")
+```bash
+. init.sh
+```
 
-You are now ready to go!
+The working directory will be changed to *everest-core/build*. Here you can use cmake and make to build the project:
 
-### Stopping things
+```bash
+cmake .. && make install
+```
+
+You can also use [make's -j flag](https://www.gnu.org/software/make/manual/html_node/Parallel.html) to speed up
+the build:
+
+```bash
+cmake .. && make install -j12
+```
+
+### Starting the NodeRed Environment
+
+```bash
+./dist/bin/manager --config ../config/config-sil-dc.yaml
+```
+
+This will prompt you to open a browser at `http://localhost:8849/`.
+
+## Stopping things
 
 Code > File > Close Remost Connection
 
 ## Resources
 
 * [Node-RED](https://nodered.org/)
-
-```
-./dist/bin/manager --config ../config/config-sil-ocpp201.yaml
-```
