@@ -4,9 +4,6 @@ from enum import Enum
 from pydantic import parse_obj_as
 
 
-# oriented at
-# https://stackoverflow.com/questions/73419115/pydantic-model-for-json-meta-schema
-
 class JsonSchemaType(str, Enum):
     OBJECT = "object"
     ARRAY = "array"

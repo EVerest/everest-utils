@@ -17,6 +17,7 @@ class ValueGenerator:
     @dataclass
     class _GeneratorContext:
         history: list[JsonSchema] = field(default_factory=list)
+        key_history: list[str] = field(default_factory=list)
 
         @property
         def depth(self) -> int:
@@ -115,6 +116,9 @@ class ValueGenerator:
 
     @_generation_step
     def _generate_int(self, what: IntegerJsonSchema, context: _GeneratorContext):
+        if context.key_history and context.key_history[-1] == "id":
+            return 1
+
         number = next(self._int_generator)
         min = what.minimum if what.minimum else 0
         if number < min:
@@ -135,6 +139,7 @@ class ValueGenerator:
         value = {}
         for key, p in what.properties.items():
             if context.depth < self._MAX_DEPTH or key in what.required:
+                context.key_history.append(key)
                 value[key] = self._generate_json_schema(p, context)
         return value
 
@@ -144,7 +149,7 @@ class ValueGenerator:
             return []
 
         target_schema = what.items if not isinstance(what.items, list) else what.items[0]
-
+        context.key_history.append(0)
         return [self._generate_json_schema(target_schema, context)]
 
     @_generation_step

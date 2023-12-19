@@ -30,10 +30,10 @@ class EverestTypeParser:
                     raise e
         return parsed_types
 
-    def parse(self, type_files: list[Path]) -> dict[str, EverestType]:
+    def parse(self, type_directories: list[Path]) -> dict[str, EverestType]:
         parsed_types = {}
-
-        for file in type_files:
-            parsed_types.update(self._parse_type_file(file))
+        for dir in type_directories:
+            for file in dir.glob("*.yaml"):
+                parsed_types.update(self._parse_type_file(file))
 
         return parsed_types

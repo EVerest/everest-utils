@@ -30,7 +30,11 @@ class MagicProbeModuleConfigurator:
         self._probe_module_requirements: dict[
             str, dict[str, list[tuple[Requirement, EverestInterface]]]] = self._determine_probe_module_requirements()
 
-    def get_interfaces(self) -> dict[str, EverestInterface]:
+    @property
+    def probe_module_id(self):
+        return self._probe_module_id
+
+    def get_interface_implementations(self) -> dict[str, EverestInterface]:
         """ Returns the mapping of implementation id to EverestInterface for every interface implementation
         the probe module shall provide. """
         return {k: self._interfaces_by_name[v] for k, v in self._probe_module_implementations.items()}
@@ -46,8 +50,8 @@ class MagicProbeModuleConfigurator:
     def get_configuration_adjustment_strategy(self) -> EverestConfigAdjustmentStrategy:
         return MagicProbeModuleConfigurationStrategy(
             module_connections=self._module_connections,
-            probe_module_connections={k: [t[0] for t in requirements] for k, requirements in
-                                      self._probe_module_requirements.items()},
+            # probe_module_connections={k: [t[0] for t in requirements] for k, requirements in
+            #                           self._probe_module_requirements.items()},
             module_id=self._probe_module_id
         )
 
@@ -101,9 +105,9 @@ class MagicProbeModuleConfigurator:
         for module_id, mod in self._everest_config.active_modules.items():
             manifest = self._manifests[mod.module]
             if manifest.provides:
-                probe_module_requirements.setdefault(module_id, []).extend((
-                    (Requirement(module_id=module_id, implementation_id=implementation_id),
-                     self._interfaces_by_name[provides.interface])
-                    for implementation_id, provides in manifest.provides.items()
-                ))
+                for implementation_id, provides in manifest.provides.items():
+                    probe_module_requirements.setdefault(provides.interface, []).append(
+                        (Requirement(module_id=module_id, implementation_id=implementation_id),
+                         self._interfaces_by_name[provides.interface])
+                    )
         return probe_module_requirements

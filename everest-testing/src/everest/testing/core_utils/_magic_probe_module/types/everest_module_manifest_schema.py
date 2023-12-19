@@ -47,8 +47,8 @@ class Metadata(BaseModel):
         list[str],
         Field(
             description="Author(s) of this module (an array of strings)",
-            min_items=1,
-            min_length=2,
+            min_items=0,
+            min_length=0,
         ),
     ]
 

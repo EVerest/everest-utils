@@ -3,10 +3,8 @@ from unittest.mock import Mock
 
 from everest.testing.core_utils.common import Requirement
 from everest.testing.core_utils.probe_module import ProbeModule
-from pydantic import BaseModel
 
 from .types.everest_command import EverestCommand
-from .types.everest_config_schema import EverestConfigSchema
 from .types.everest_interface import EverestInterface
 from .types.everest_type import EverestType
 from .value_generator import ValueGenerator
@@ -15,13 +13,11 @@ from .value_generator import ValueGenerator
 class MagicProbeModule(ProbeModule):
 
     def __init__(self,
-                 interfaces: dict[str, EverestInterface],
+                 interface_implementations: dict[str, EverestInterface],
                  types: list[EverestType],
                  connections: dict[str, list[tuple[Requirement, EverestInterface]]],
-                 config: EverestConfigSchema | dict,
                  session, module_id="probe"):
-        self._config = config if isinstance(config, EverestConfigSchema) else EverestConfigSchema(**config)
-        self._interfaces = interfaces
+        self._interface_implementations = interface_implementations
         self._connections = connections
         super().__init__(session, module_id)
         self._value_generator = ValueGenerator(types)
@@ -53,8 +49,7 @@ class MagicProbeModule(ProbeModule):
         return self._implementation_mocks
 
     def _init_commands(self):
-
-        for implementation_id, interface in self._interfaces.items():
+        for implementation_id, interface in self._interface_implementations.items():
             for command in interface.commands.values():
                 self._init_command(implementation_id, command)
 
