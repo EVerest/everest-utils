@@ -1,3 +1,5 @@
+import logging
+from dataclasses import dataclass
 from typing import Dict
 
 from everest.testing.core_utils.common import Requirement
@@ -7,6 +9,13 @@ from .types.everest_config_schema import EverestConfigSchema
 from .types.everest_interface import EverestInterface
 from .types.everest_module_manifest_schema import EverestModuleManifestSchema
 from everest.testing.core_utils import EverestConfigAdjustmentStrategy
+
+
+@dataclass
+class _UnfulfilledRequirement:
+    module_id: str
+    requirement_name: str
+    count: int
 
 
 class MagicProbeModuleConfigurator:
@@ -23,8 +32,15 @@ class MagicProbeModuleConfigurator:
         self._everest_config = everest_config
         self._interfaces_by_name = {i.interface: i for i in interfaces}
         self._probe_module_id = probe_module_id
+
+        # Determine, which fulfillments of the probe module are already defined in the config
+        self._existing_fulfillments: dict[str, str] = self._collect_existing_probe_module_fulfillments()
+
+        # Add unfullfilled requirements from all modules
         self._unfulfilled_requirements: dict[
-            str, list[tuple[str, str, int]]] = self._determine_unfulfilled_requirements()
+            str, list[_UnfulfilledRequirement]] = self._determine_unfulfilled_requirements()
+
+        # Conclude the resulting implementations
         self._probe_module_implementations: dict[str, str] = self._determine_probe_module_implementations()
         self._module_connections: dict[str, dict[str, list[str]]] = self._determine_module_probe_module_connections()
         self._probe_module_requirements: dict[
@@ -56,13 +72,13 @@ class MagicProbeModuleConfigurator:
         )
 
     @staticmethod
-    def _get_implementation_id(interface_name: str, index: int):
+    def _generate_implementation_id(interface_name: str, index: int):
         if index == 0:
             return interface_name
         else:
             return f"{interface_name}_{index}"
 
-    def _determine_unfulfilled_requirements(self) -> dict[str, list[tuple[str, str, int]]]:
+    def _determine_unfulfilled_requirements(self) -> dict[str, list[_UnfulfilledRequirement]]:
         """
         :return: mapping interface -> list of requiring modules given by tuple of module id and count of required connections
         """
@@ -77,29 +93,70 @@ class MagicProbeModuleConfigurator:
                 remaining_requirement_count = requirement.min_connections - len(connections)
                 if remaining_requirement_count > 0:
                     unfulfilled_requirements.setdefault(requirement.interface, []).append(
-                        (module_id, requirement_name, remaining_requirement_count))
+                        _UnfulfilledRequirement(module_id=module_id, requirement_name=requirement_name,
+                                                count=remaining_requirement_count))
 
         return unfulfilled_requirements
 
+    def _collect_existing_probe_module_fulfillments(self) -> dict[str, str]:
+        """ Searches all already existing fulfillments in the provided configuration.
+        Returns map of implementation_id to interface name.
+        """
+
+        existing_fulfillments = {}
+
+        for module_id, mod in self._everest_config.active_modules.items():
+            manifest = self._manifests[mod.module]
+            for requirement_name, requirement in manifest.requires.items():
+                existing_fulfillments.update(
+                    {c.implementation_id: requirement.interface for c in mod.connections.get(requirement_name, [])
+                     if c.module_id == self._probe_module_id})
+
+        return existing_fulfillments
+
     def _determine_probe_module_implementations(self) -> dict[str, str]:
-        interfaces = {}
+        interfaces = self._existing_fulfillments.copy()
+
+        existing_implementations_by_interface = {}  # mapping interface name to list of implementation_ids
+        for implementation_id, interface in self._existing_fulfillments.items():
+            existing_implementations_by_interface.setdefault(interface, []).append(implementation_id)
+
         for interface, requirement_list in self._unfulfilled_requirements.items():
-            requirement_count = max(requirement_count for (_, _, requirement_count) in requirement_list)
-            for i in range(requirement_count):
-                interfaces[self._get_implementation_id(interface, i)] = interface
+            requirement_count = max(req.count for req in requirement_list)
+
+            # in addition to existing implementation ids, we generate new ones
+            existing_implementation_ids = existing_implementations_by_interface.get(interface, [])
+            added_implementation_ids = [
+                self._generate_implementation_id(interface, len(existing_implementation_ids) + i)
+                for i in range(requirement_count - len(existing_implementation_ids))]
+
+            # avoid weird special case: the newly generated names equal the config-defined ones
+            assert len(set(existing_implementation_ids + added_implementation_ids)) >= requirement_count, (
+                f"existing implementation ids for interface {interface} interfere with magic probe module; please consider renaming implementation ids {existing_implementations_by_interface.get(interface, [])} in config")
+
+            for implementation_id in added_implementation_ids:
+                interfaces[implementation_id] = interface
+        logging.warning(f"MP interfaces: {interfaces}")
+
         return interfaces
 
     def _determine_module_probe_module_connections(self) -> dict[str, dict[str, list[str]]]:
+        """ Determine for each module the probe module's implementations it will require."""
         module_connections = {}
-        for interface, requirement_list in self._unfulfilled_requirements.items():
 
-            for (module_id, requirement_name, requirement_count) in requirement_list:
-                current_module_connections = module_connections.setdefault(module_id, {})
-                current_module_connections[requirement_name] = [self._get_implementation_id(interface, i) for i in
-                                                                range(requirement_count)]
+        implementations_by_interface = {}  # mapping interface name to list of implementation_ids
+        for implementation_id, interface in self._probe_module_implementations.items():
+            implementations_by_interface.setdefault(interface, []).append(implementation_id)
+
+        for interface, requirement_list in self._unfulfilled_requirements.items():
+            for req in requirement_list:
+                current_module_connections = module_connections.setdefault(req.module_id, {})
+                current_module_connections[req.requirement_name] = [implementations_by_interface[interface][i] for i in
+                                                                    range(req.count)]
         return module_connections
 
     def _determine_probe_module_requirements(self) -> dict[str, dict[str, list[tuple[Requirement, EverestInterface]]]]:
+        """ Determine the requirements of the probe module itself by collecting all provided interface implementations """
         probe_module_requirements = {}
 
         for module_id, mod in self._everest_config.active_modules.items():

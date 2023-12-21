@@ -1,14 +1,14 @@
+import logging
 from typing import Callable, Any
 from unittest.mock import Mock
 
 from everest.testing.core_utils.common import Requirement
-from everest.testing.core_utils.probe_module import ProbeModule
+from everest.testing.core_utils.probe_module import ProbeModule, RuntimeSession
 
 from .types.everest_command import EverestCommand
 from .types.everest_interface import EverestInterface
 from .types.everest_type import EverestType
 from .value_generator import ValueGenerator
-
 
 class MagicProbeModule(ProbeModule):
 
@@ -16,7 +16,19 @@ class MagicProbeModule(ProbeModule):
                  interface_implementations: dict[str, EverestInterface],
                  types: list[EverestType],
                  connections: dict[str, list[tuple[Requirement, EverestInterface]]],
-                 session, module_id="probe"):
+                 session: RuntimeSession,
+                 strict_mode: bool = False, module_id="probe"):
+        """
+
+        Args:
+            interface_implementations: implemented interfaces of the probe module, indexed by implementation_id
+            types: parsed EverestTypes (required for value generation)
+            connections: connections of the Probe Module (i.e. fulfilled by other modules)
+            strict_mode: if True, exceptions are raised for not-implemented commands
+            session:
+            module_id:
+        """
+        self._strict_mode = strict_mode
         self._interface_implementations = interface_implementations
         self._connections = connections
         super().__init__(session, module_id)
@@ -26,6 +38,19 @@ class MagicProbeModule(ProbeModule):
 
     def implement_command(self, implementation_id: str, command_name: str, handler: Callable[[dict], Any]):
         getattr(self._implementation_mocks[implementation_id], command_name).side_effect = handler
+
+    def get_interface_implementations(self) -> dict[str, EverestInterface]:
+        """
+
+        Returns: Mapping implementation id -> EverestInterface of all implemented interfaces by the probe module
+
+        """
+        return self._interface_implementations
+
+    def publish_on_all_interface_implementations(self, interface_name: str, variable: str, value: Any):
+        implementations = [k for k,v in self._interface_implementations.items() if v.interface == interface_name]
+        for implementation in implementations:
+            super().publish_variable(implementation, variable, value)
 
     def subscribe_all(self,
                       message_callback: Callable[[Any], None],
@@ -69,6 +94,9 @@ class MagicProbeModule(ProbeModule):
             if command_mock.side_effect or command_mock.return_value != original_return_value:
                 return res
             elif command.result:
+                if self._strict_mode:
+                    raise NotImplementedError(f"MagicProbeModule command {implementation_id} / {command} not implemented")
+                logging.warning(f"MagicProbeModule command {implementation_id} / {command} not implemented - returning auto-generated value!")
                 return self._value_generator.generate(command.result)
             else:
                 return None

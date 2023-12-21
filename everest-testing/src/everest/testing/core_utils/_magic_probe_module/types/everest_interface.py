@@ -9,3 +9,6 @@ class EverestInterface:
     interface: str
     commands: dict[str, EverestCommand]
     variables: dict[str, EverestVariable]
+
+    def __str__(self):
+        return f"EVerestInterface '{self.interface}'"
