@@ -86,13 +86,15 @@ the build:
 cmake .. && make install -j12
 ```
 
-### Starting the NodeRed Environment
+### Starting everest with SIL simulation and a user interface
 
 ```bash
 ./dist/bin/manager --config ../config/config-sil-dc.yaml
 ```
 
-This will prompt you to open a browser at `http://localhost:8849/`.
+This starts the EVerest Manager with the modules loaded determined by the `config-sil-dc.yaml` config file.
+
+You can interact with it using the Node-RED UI by opening your browser to `http://localhost:8849/`.
 
 ## Stopping things
 
