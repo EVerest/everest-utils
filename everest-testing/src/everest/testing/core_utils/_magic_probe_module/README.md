@@ -94,7 +94,7 @@ active_modules:
       MessageLogPath: /tmp/sharedtmp/pytest/test_against_occp0/ocpp_config/logs
     connections:
       evse_manager:
-      - implementation_id: ProbeModuleConnectorA
+      - implementation_id: evse_manager
         module_id: probe
       kvs:
       - implementation_id: kvs
