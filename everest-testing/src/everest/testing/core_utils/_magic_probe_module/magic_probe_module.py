@@ -8,6 +8,7 @@ from everest.testing.core_utils.probe_module import ProbeModule, RuntimeSession
 from .types.everest_command import EverestCommand
 from .types.everest_interface import EverestInterface
 from .types.everest_type import EverestType
+from .types.json_schema_models import JsonSchema
 from .value_generator import ValueGenerator
 
 class MagicProbeModule(ProbeModule):
@@ -35,6 +36,12 @@ class MagicProbeModule(ProbeModule):
         self._value_generator = ValueGenerator(types)
         self._implementation_mocks: dict[str, Mock] = {}
         self._init_commands()
+
+    async def wait_to_be_ready(self, timeout=3):
+        await super().wait_to_be_ready(timeout=timeout)
+        for interface_implementation in self._interface_implementations:
+            self.publish_variable(interface_implementation,"ready", True)
+
 
     def implement_command(self, implementation_id: str, command_name: str, handler: Callable[[dict], Any]):
         getattr(self._implementation_mocks[implementation_id], command_name).side_effect = handler
@@ -95,10 +102,16 @@ class MagicProbeModule(ProbeModule):
                 return res
             elif command.result:
                 if self._strict_mode:
-                    raise NotImplementedError(f"MagicProbeModule command {implementation_id} / {command} not implemented")
+                    error = f"MagicProbeModule command {implementation_id} / {command} not implemented - aborting test"
+                    logging.error(error)
+                    raise NotImplementedError(error)
                 logging.warning(f"MagicProbeModule command {implementation_id} / {command} not implemented - returning auto-generated value!")
                 return self._value_generator.generate(command.result)
             else:
                 return None
 
         return _handler
+
+
+    def get_value(self, what: EverestType | JsonSchema | str):
+        self._value_generator.generate(what)

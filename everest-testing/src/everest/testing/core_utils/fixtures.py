@@ -14,17 +14,33 @@ from ._configuration.everest_environment_setup import \
 from everest.testing.core_utils.controller.everest_test_controller import EverestTestController
 from everest.testing.core_utils.everest_core import EverestCore
 
+from ._magic_probe_module.magic_probe_module_configurator import MagicProbeModuleConfigurator
+from ._magic_probe_module.parser.everest_interface_parser import EverestInterfaceParser
+from ._magic_probe_module.types.everest_config_schema import EverestConfigSchema as _EverestConfigSchema
+from ._magic_probe_module.types.everest_module_manifest_schema import EverestModuleManifestSchema
+import yaml
 
-@pytest.fixture
-def probe_module_config(request) -> Optional[EverestEnvironmentProbeModuleConfiguration]:
-    marker = request.node.get_closest_marker("probe_module")
-    if marker:
-        return EverestEnvironmentProbeModuleConfiguration(
-            **marker.kwargs
-        )
+def _build_magic_probe_module_configurator(core_config: EverestEnvironmentCoreConfiguration) -> MagicProbeModuleConfigurator:
+    everest_config = _EverestConfigSchema(**yaml.safe_load(core_config.template_everest_config_path.read_text()))
 
-    return None
+    interfaces_directory = core_config.everest_core_path / "share" / "everest" / "interfaces"
+    modules_dir = core_config.everest_core_path / "libexec" / "everest" / "modules"
 
+    everest_interfaces = EverestInterfaceParser().parse([interfaces_directory])
+
+    everest_manifests = {}
+    for f in modules_dir.glob("*"):
+        if (f / "manifest.yaml").exists():
+            everest_manifests[f.name] = EverestModuleManifestSchema(
+                **yaml.safe_load((f / "manifest.yaml").read_text()))
+
+    configurator = MagicProbeModuleConfigurator(
+        everest_config=everest_config,
+        interfaces=everest_interfaces,
+        manifests=everest_manifests
+    )
+
+    return configurator
 
 @pytest.fixture
 def core_config(request) -> EverestEnvironmentCoreConfiguration:
@@ -42,6 +58,26 @@ def core_config(request) -> EverestEnvironmentCoreConfiguration:
         template_everest_config_path=everest_config_path,
     )
 
+
+@pytest.fixture
+def probe_module_config(request, core_config) -> Optional[EverestEnvironmentProbeModuleConfiguration]:
+    magic_probe_module_marker = request.node.get_closest_marker("magic_probe_module")
+    if magic_probe_module_marker:
+        configurator = _build_magic_probe_module_configurator(core_config)
+        return EverestEnvironmentProbeModuleConfiguration(
+            module_id=configurator.probe_module_id,
+            connections={k: [t[0] for t in requirements] for k, requirements in
+                         configurator.get_requirements().items()},
+            magic_probe_module_strict_mode=magic_probe_module_marker.kwargs.get("strict", False),
+            magic_probe_module_configurator=configurator
+        )
+    probe_module_marker = request.node.get_closest_marker("probe_module")
+    if probe_module_marker:
+        return EverestEnvironmentProbeModuleConfiguration(
+            **probe_module_marker.kwargs
+        )
+
+    return None
 
 @pytest.fixture
 def ocpp_config(request) -> Optional[EverestEnvironmentOCPPConfiguration]:

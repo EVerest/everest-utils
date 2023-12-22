@@ -25,6 +25,7 @@ from .everest_configuration_strategies.probe_module_configuration_strategy impor
     ProbeModuleConfigurationStrategy
 from .libocpp_configuration_helper import \
     LibOCPP201ConfigurationHelper, LibOCPP16ConfigurationHelper
+from .._magic_probe_module.magic_probe_module_configurator import MagicProbeModuleConfigurator
 
 
 @dataclass
@@ -68,6 +69,8 @@ class EverestEnvironmentCoreConfiguration:
 class EverestEnvironmentProbeModuleConfiguration:
     connections: Dict[str, List[Requirement]] = field(default_factory=dict)
     module_id: str = "probe"
+    magic_probe_module_strict_mode: bool = False,
+    magic_probe_module_configurator: Optional[MagicProbeModuleConfigurator] = None
 
 
 class EverestTestEnvironmentSetup:
@@ -225,6 +228,8 @@ class EverestTestEnvironmentSetup:
             configuration_strategies.append(
                 ProbeModuleConfigurationStrategy(connections=self._probe_config.connections,
                                                  module_id=self._probe_config.module_id))
+            if self._probe_config.magic_probe_module_configurator:
+                configuration_strategies.append(self._probe_config.magic_probe_module_configurator.get_configuration_adjustment_strategy())
 
         if self._evse_security_config:
             configuration_strategies.append(

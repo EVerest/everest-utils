@@ -193,13 +193,17 @@ class EverestCore:
 
         expected_status = 'ALL_MODULES_STARTED' if standalone_module == None else 'WAITING_FOR_STANDALONE_MODULES'
 
-        status = self.status_listener.wait_for_status(STARTUP_TIMEOUT, [expected_status])
-        if status == None or len(status) == 0:
-            raise TimeoutError("Timeout while waiting for EVerest to start")
-
-        logging.info("EVerest has started")
-        if expected_status == 'ALL_MODULES_STARTED':
+        if standalone_module and set(standalone_module) - {"probe"}:
+            time.sleep(25)
             self.all_modules_started_event.set()
+        else:
+            status = self.status_listener.wait_for_status(STARTUP_TIMEOUT, [expected_status])
+            if status == None or len(status) == 0:
+                raise TimeoutError("Timeout while waiting for EVerest to start")
+
+            logging.info("EVerest has started")
+            if expected_status == 'ALL_MODULES_STARTED':
+                self.all_modules_started_event.set()
 
     def read_everest_log(self):
         while self.process.poll() == None:

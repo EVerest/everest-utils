@@ -1,14 +1,12 @@
 import logging
 from dataclasses import dataclass
-from typing import Dict
 
+from everest.testing.core_utils import EverestConfigAdjustmentStrategy
 from everest.testing.core_utils.common import Requirement
-
 from .magic_probe_module_config_strategy import MagicProbeModuleConfigurationStrategy
 from .types.everest_config_schema import EverestConfigSchema
 from .types.everest_interface import EverestInterface
 from .types.everest_module_manifest_schema import EverestModuleManifestSchema
-from everest.testing.core_utils import EverestConfigAdjustmentStrategy
 
 
 @dataclass
@@ -168,3 +166,5 @@ class MagicProbeModuleConfigurator:
                          self._interfaces_by_name[provides.interface])
                     )
         return probe_module_requirements
+
+
