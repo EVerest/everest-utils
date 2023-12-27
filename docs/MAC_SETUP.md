@@ -32,25 +32,18 @@ Host github.com
 
 ## Standup Dev Playground
 
-### TL;DR
-
-This repo includes a script that does the setup steps below checking that your environment is setup correctly 
-and if so running the commands to stand up the Docker network and dev playground.
-
-```shell
-$> bin/devup
-```
-
 ### Create docker network
 
-```
+```bash
 docker network create --driver bridge --ipv6  --subnet fd00::/80 infranet_network --attachable
 ```
 
 ### Start up the docker EVerest Playground
 
+```
 docker compose -f ./everest-utils/docker/docker-compose.yml" up -d mqtt-server 
 docker compose -f ./everest-utils/docker/docker-compose.yml" up -d nodered
+```
 
 ## Start VSCode Docker Dev Environment
 
@@ -98,7 +91,7 @@ You can interact with it using the Node-RED UI by opening your browser to `http:
 
 ## Stopping things
 
-Code > File > Close Remost Connection
+`Code > File > Close Remost Connection`
 
 ## Resources
 
