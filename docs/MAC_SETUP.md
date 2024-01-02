@@ -41,8 +41,8 @@ docker network create --driver bridge --ipv6  --subnet fd00::/80 infranet_networ
 ### Start up the docker EVerest Playground
 
 ```
-docker compose -f ./everest-utils/docker/docker-compose.yml" up -d mqtt-server 
-docker compose -f ./everest-utils/docker/docker-compose.yml" up -d nodered
+docker compose -f ./docker/docker-compose.yml up -d mqtt-server 
+docker compose -f ./docker/docker-compose.yml up -d nodered
 ```
 
 ## Start VSCode Docker Dev Environment
@@ -51,7 +51,12 @@ In VSCode:
 
 * Press `CMD + Shift + P`
 * type `Dev Containers: Open Folder in Container...`
+
+![Shift + P](images/shot1_cmd_p.png "Shift + P")
+
 * Navigate and open the docker/everest-playground folder. 
+
+![Open Folder in Container..](images/shot2_open_folder.png "Folder in Container..")
 
 This will open the EVerest Playground as a VSCode dev container. You should now be ready to go.
 
@@ -66,6 +71,8 @@ Initialize the EVerest workspace sourcing the *[init.sh](./init.sh)* file:
 . init.sh
 ```
 
+![init.sh](images/shot3_init.png "init.sh")
+
 The working directory will be changed to *everest-core/build*. Here you can use cmake and make to build the project:
 
 ```bash
@@ -79,6 +86,8 @@ the build:
 cmake .. && make install -j12
 ```
 
+![make install](images/shot4_install.png "make install")
+
 ### Starting everest with SIL simulation and a user interface
 
 ```bash
@@ -88,6 +97,8 @@ cmake .. && make install -j12
 This starts the EVerest Manager with the modules loaded determined by the `config-sil-dc.yaml` config file.
 
 You can interact with it using the Node-RED UI by opening your browser to `http://localhost:8849/`.
+
+![EVerest Admin Panel](images/shot5_admin_panel.png "EVerest Admin Panel")
 
 ## Stopping things
 
