@@ -47,6 +47,11 @@ public:
     // no errors defined for this interface
     {% else %}
     // raise functions for errors
+    // general raise function
+    Everest::error::ErrorHandle raise_error_object(const Everest::error::Error& error) {
+        return _ev->raise_error_object(_name, error);
+    }
+    // type specific raise functions
     {% for error in errors %}
     Everest::error::ErrorHandle raise_{{ error.namespace }}_{{ error.name }}(const std::string& message, const Everest::error::Severity& severity=Everest::error::Severity::Low) {
         return _ev->raise_error(
