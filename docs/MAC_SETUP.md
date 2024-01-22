@@ -32,18 +32,7 @@ Host github.com
 
 ## Standup Dev Playground
 
-### Create docker network
-
-```bash
-docker network create --driver bridge --ipv6  --subnet fd00::/80 infranet_network --attachable
-```
-
-### Start up the docker EVerest Playground
-
-```
-docker compose -f ./docker/docker-compose.yml up -d mqtt-server 
-docker compose -f ./docker/docker-compose.yml up -d nodered
-```
+Run the `./bin/devup` shell in order to stand up the required Docker network and containers.
 
 ## Start VSCode Docker Dev Environment
 
