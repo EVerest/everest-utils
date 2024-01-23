@@ -28,6 +28,7 @@ RUN apt-get update \
     libssl-dev \
     libcurl4-openssl-dev \
     libpcap-dev \
+    libcap-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -91,6 +92,7 @@ RUN apt-get update \
     libboost-system1.74.0 \
     libssl1.1 \
     libcurl4 \
+    libcap \
     less \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
