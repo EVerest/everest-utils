@@ -123,8 +123,10 @@ def test_controller(request, tmp_path, everest_core) -> EverestTestController:
 def connected_mqtt_client(everest_core: EverestCore) -> mqtt.Client:
     mqtt_server_uri = os.environ.get("MQTT_SERVER_ADDRESS", "127.0.0.1")
     mqtt_server_port = int(os.environ.get("MQTT_SERVER_PORT", "1883"))
-    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, everest_core.everest_uuid)
+    client = mqtt.Client(everest_core.everest_uuid)
     client.connect(mqtt_server_uri, mqtt_server_port)
     client.loop_start()
 
-    return client
+    yield client
+
+    client.loop_stop()
