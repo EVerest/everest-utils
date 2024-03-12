@@ -11,6 +11,15 @@
 
 #include <framework/runtime.hpp>
 #include <utils/types.hpp>
+#if __has_include(<cmake-vars.h>)
+#include <cmake-vars.h>
+#endif
+#ifndef PROJECT_NAME
+#define PROJECT_NAME "undefined project"
+#endif
+#ifndef PROJECT_VERSION
+#define PROJECT_VERSION "undefined version"
+#endif
 
 {% if info.enable_global_errors %}
 #include <utils/error/error_manager_req_global.hpp>
@@ -137,7 +146,8 @@ std::vector<Everest::cmd> everest_register(const json& connections) {
 int main(int argc, char* argv[]) {
     auto module_loader = Everest::ModuleLoader(argc, argv, Everest::ModuleCallbacks(
         module::register_module_adapter, module::everest_register,
-        module::LdEverest::init, module::LdEverest::ready));
+        module::LdEverest::init, module::LdEverest::ready),
+        PROJECT_NAME, PROJECT_VERSION);
 
     return module_loader.initialize();
 }
