@@ -1,21 +1,11 @@
 import asyncio
 import logging
-import datetime
 import threading
 
 from queue import Queue
 from typing import Any, Callable
 
 from everest.framework import Module, RuntimeSession
-
-def display_msg(logger, msg: str):
-    logger("   %s THREAD: %s -> %s", datetime.datetime.now(), threading.get_ident(), msg)
-
-def debug_msg(msg: str):
-    display_msg(logging.debug, msg)
-
-def info_msg(msg: str):
-    display_msg(logging.info, msg)
 
 class ProbeModule:
     """
