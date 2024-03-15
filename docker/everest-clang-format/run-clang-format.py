@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# See original source at https://github.com/Sarcasm/run-clang-format/blob/39081c9c42768ab5e8321127a7494ad1647c6a2f/run-clang-format.py
+#
 # MIT License
 #
 # Copyright (c) 2017 Guillaume Papin
