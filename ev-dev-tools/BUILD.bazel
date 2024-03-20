@@ -1,0 +1,38 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_binary")
+load("@everest-utils//:requirements.bzl", "requirement")
+
+genrule(
+    name = "main",
+    outs = ["ev-cli.py"],
+    cmd = '''
+echo "from ev_cli.ev import main" > $@
+echo "main()" >> $@
+'''
+)
+
+genrule(
+    name = "version",
+    outs = ["src/ev_cli/__version__.py"],
+    cmd = "echo 0.1.6 > $@"
+)
+
+py_library(
+    name = "lib",
+    srcs = glob(["src/ev_cli/*.py"]) + [":version",],
+    deps = [
+        requirement("jinja2"),
+        requirement("jsonschema"),
+        requirement("stringcase"),
+        requirement("pyyaml"),
+    ],
+    imports = ["src"],
+)
+
+py_binary(
+    name = "ev-cli",
+    data = glob(["src/ev_cli/templates/**",]),
+    srcs = [":main"],
+    deps = [":lib"],
+    legacy_create_init = False,
+    visibility = ["//visibility:public"],
+)
