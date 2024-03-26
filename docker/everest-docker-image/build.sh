@@ -7,6 +7,7 @@ usage() {
     echo -e "\t--conf: Path to EVerest config file - Required"
     echo -e "\t--ocpp-conf: Path to EVerest OCPP config file - Optional, no default"
     echo -e "\t--name: Name of the docker image - Optional, defaults to: everest-core"
+    echo -e "\t--build-date: Build date of the docker image, is reflected in its name and can have an effect on caching - Optional, defaults to the current datetime"
     exit 1
 }
 
@@ -25,6 +26,9 @@ while [ ! -z "$1" ]; do
         shift 2
     elif [ "$1" == "--branch" ]; then
         branch="${2}"
+        shift 2
+    elif [ "$1" == "--build-date" ]; then
+        build_date="${2}"
         shift 2
     else
         usage
@@ -60,8 +64,12 @@ if [ -z "${branch}" ]; then
     branch="main"
 fi
 
-
 NOW=$(date +"%Y-%m-%d-%H-%M-%S")
+
+if [ -n "${build_date}" ]; then
+    NOW="${build_date}"
+fi
+
 DOCKER_BUILDKIT=1 docker build \
     --build-arg BUILD_DATE="${NOW}" \
     --build-arg REPO="${repo}" \
