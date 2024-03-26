@@ -36,3 +36,6 @@ To run the image in a docker container, run the following commands
 docker load < <YOUR_IMAGE-TIMESTAMP.tar.gz>
 docker run --rm -it --network host <IMAGE_NAME>
 ```
+
+## Run EVerest with OCPP 2.0.1 in docker
+To run EVerest with OCPP 2.0.1 you can use the provided docker-compose.yaml with the example run-ac-pwm.sh script
