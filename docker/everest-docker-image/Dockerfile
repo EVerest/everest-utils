@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM debian:11 AS builder
+FROM debian:11-slim AS builder
 
 ARG REPO
 ARG BRANCH
