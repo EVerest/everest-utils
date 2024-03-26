@@ -121,7 +121,11 @@ private:
                         std::vector<{{ arg.array_type }}> {{ arg.name }} = args["{{ arg.name }}"];
                     {% endif %}
                 {% else %}
+                {% if arg.cpp_type == 'Array' %}
+                    auto {{ arg.name }} = {{ var_to_cpp(arg) }}(args["{{ arg.name }}"].get<{{arg.cpp_type}}>());
+                {% else %}
                     auto {{ arg.name }} = {{ var_to_cpp(arg) }}(args["{{ arg.name }}"]);
+                {% endif %}
                 {% endif %}
             {% else %}
                 (void) args; // no arguments used for this callback
