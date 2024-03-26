@@ -68,6 +68,7 @@ RUN rm -rf "/workspace/everest/$(basename "${REPO}" .git)/build" && \
     cmake .. -DEVEREST_BUILD_ALL_MODULES=ON -DCMAKE_INSTALL_PREFIX=/opt/everest && \
     make -j"$(nproc)" install
 
+RUN cp -R "$(grep -m 1 "ocpp_SOURCE_DIR:STATIC=" "/workspace/everest/$(basename "${REPO}" .git)/build/CMakeCache.txt" | sed "s/ocpp_SOURCE_DIR:STATIC=//")/config/v201" /opt/everest/ocpp201config
 RUN mkdir -p /opt/everest/config/user-config
 COPY "${EVEREST_CONFIG}" /opt/everest/config/
 COPY "${OCPP_CONFIG}" /opt/everest/config/
@@ -103,5 +104,6 @@ RUN pip install --user -r requirements.txt
 
 WORKDIR /opt/everest
 COPY --from=builder /opt/everest ./
+COPY ./scripts/initialize.sh /opt/everest
 
 CMD [ "/opt/everest/bin/manager", "--conf", "/opt/everest/config/config.yaml" ]
