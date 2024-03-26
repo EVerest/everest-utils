@@ -94,6 +94,7 @@ RUN apt-get update \
     libcurl4 \
     libcap2 \
     less \
+    libevent-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
