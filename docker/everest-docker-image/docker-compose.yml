@@ -5,7 +5,6 @@ services:
     image: eclipse-mosquitto:2.0.18
     ports:
       - 1883:1883
-      - 8849:8849
     volumes:
       - ../mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
   nodered:
@@ -20,6 +19,8 @@ services:
       - mqtt-server
   everest:
     image: everest-core:latest
+    ports:
+      - 8849:8849
     depends_on:
       - mqtt-server
     environment:
