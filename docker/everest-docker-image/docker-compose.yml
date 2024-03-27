@@ -7,6 +7,16 @@ services:
       - 1883:1883
     volumes:
       - ../mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+  nodered:
+    build:
+      context: ./nodered
+      dockerfile: Dockerfile
+    ports:
+      - 1880:1880
+    volumes:
+      - ./nodered/flows:/data/flows
+    depends_on:
+      - mqtt-server
   everest:
     image: everest-core:latest
     depends_on:
