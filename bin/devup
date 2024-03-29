@@ -18,5 +18,5 @@ docker network create --driver bridge --ipv6  --subnet fd00::/80 infranet_networ
 # Standup Dev Docker Compose Environment
 echo "Standing up Dev Everest Docker Playground"
 
-docker compose -f "./everest-utils/docker/docker-compose-dev.yml" up -d mqtt-server 
-docker compose -f "./everest-utils/docker/docker-compose-dev.yml" up -d nodered
+docker compose -f "./docker/docker-compose.yml" up -d mqtt-server 
+docker compose -f "./docker/docker-compose.yml" up -d nodered
