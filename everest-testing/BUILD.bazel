@@ -1,9 +1,17 @@
-load("@rules_python//python:defs.bzl", "py_library")
+load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier_test")
 load("@everest-utils//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_library")
+
+buildifier_test(
+    name = "buildifier_test",
+    srcs = ["BUILD.bazel"],
+)
 
 py_library(
     name = "everest-testing",
     srcs = glob(["src/**/*.py"]),
+    imports = ["src"],
+    visibility = ["//visibility:public"],
     deps = [
         requirement("pytest"),
         requirement("pytest-asyncio"),
@@ -15,6 +23,4 @@ py_library(
         requirement("pyOpenSSL"),
         requirement("pyyaml"),
     ],
-    imports = ["src"],
-    visibility = ["//visibility:public"],
 )

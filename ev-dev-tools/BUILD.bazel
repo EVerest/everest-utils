@@ -1,38 +1,30 @@
-load("@rules_python//python:defs.bzl", "py_library", "py_binary")
+load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier_test")
 load("@everest-utils//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
 
-genrule(
-    name = "main",
-    outs = ["ev-cli.py"],
-    cmd = '''
-echo "from ev_cli.ev import main" > $@
-echo "main()" >> $@
-'''
-)
-
-genrule(
-    name = "version",
-    outs = ["src/ev_cli/__version__.py"],
-    cmd = "echo 0.1.6 > $@"
+buildifier_test(
+    name = "buildifier_test",
+    srcs = ["BUILD.bazel"],
 )
 
 py_library(
     name = "lib",
-    srcs = glob(["src/ev_cli/*.py"]) + [":version",],
+    srcs = glob(["src/ev_cli/*.py"]),
+    imports = ["src"],
     deps = [
         requirement("jinja2"),
         requirement("jsonschema"),
         requirement("stringcase"),
         requirement("pyyaml"),
     ],
-    imports = ["src"],
 )
 
 py_binary(
     name = "ev-cli",
-    data = glob(["src/ev_cli/templates/**",]),
-    srcs = [":main"],
-    deps = [":lib"],
+    srcs = ["src/ev_cli/ev.py"],
+    data = glob(["src/ev_cli/templates/**"]),
     legacy_create_init = False,
+    main = "src/ev_cli/ev.py",
     visibility = ["//visibility:public"],
+    deps = [":lib"],
 )
