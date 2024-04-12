@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM debian:11-slim AS builder
+FROM debian:12-slim AS builder
 
 ARG REPO
 ARG BRANCH
@@ -21,7 +21,7 @@ RUN apt-get update \
     cppcheck \
     libboost-all-dev \
     maven \
-    openjdk-11-jdk \
+    openjdk-17-jdk \
     nodejs \
     npm \
     libsqlite3-dev \
@@ -30,6 +30,7 @@ RUN apt-get update \
     libcurl4-openssl-dev \
     libpcap-dev \
     libcap-dev \
+    python3-venv \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -44,7 +45,9 @@ RUN ssh-keyscan github.com > ~/.ssh/known_hosts
 
 RUN mkdir -p /workspace/everest/cpm_source_cache    
 ENV CPM_SOURCE_CACHE="/workspace/everest/cpm_source_cache"
-
+ENV EVEREST_VENV=/workspace/everest/venv
+RUN python3 -m venv ${EVEREST_VENV}
+ENV PATH="${EVEREST_VENV}/bin:${PATH}"
 RUN git clone https://github.com/EVerest/everest-cmake.git
 RUN git clone https://github.com/EVerest/everest-utils.git
 WORKDIR /workspace/everest/everest-utils/ev-dev-tools
@@ -55,6 +58,8 @@ WORKDIR /workspace/everest/everest-dev-environment/dependency_manager
 RUN python3 -m pip install .
 WORKDIR /workspace/everest
 RUN git clone https://github.com/EVerest/ext-switchev-iso15118.git
+WORKDIR /workspace/everest/ext-switchev-iso15118/
+RUN pip install -r requirements.txt
 
 WORKDIR /workspace/everest
 
@@ -80,11 +85,11 @@ RUN if [ "${OCPP_CONFIG}" != "ocpp-config.json" ]; then mv /opt/everest/config/"
 COPY logging.ini /opt/everest/config
 
 # syntax=docker/dockerfile:1
-FROM debian:11-slim
+FROM debian:12-slim
 
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
-    openjdk-11-jre \
+    openjdk-17-jre \
     nodejs \
     npm \
     python3-pip \
@@ -93,16 +98,19 @@ RUN apt-get update \
     libboost-log1.74.0 \
     libboost-chrono1.74.0 \
     libboost-system1.74.0 \
-    libssl1.1 \
+    libssl3 \
     libcurl4 \
     libcap2 \
     less \
     libevent-dev \
+    python3-venv \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /workspace/everest/ext-switchev-iso15118/requirements.txt ./
-RUN pip install --user -r requirements.txt
+ENV EVEREST_VENV=/workspace/everest/venv
+RUN python3 -m venv ${EVEREST_VENV}
+ENV PATH="${EVEREST_VENV}/bin:${PATH}"
+COPY --from=builder /workspace/everest/venv /workspace/everest/venv
 
 WORKDIR /opt/everest
 COPY --from=builder /opt/everest ./
