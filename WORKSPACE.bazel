@@ -26,7 +26,7 @@ load("@rules_python//python:pip.bzl", "pip_parse")
 
 pip_parse(
     name = "everest-testing_pip_deps",
-    requirements_lock = "//:requirements.txt",
+    requirements_lock = "//:requirements-bazel.txt",
 )
 
 load("//third-party/bazel:defs.bzl", "everest_utils_defs")
