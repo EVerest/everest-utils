@@ -5,6 +5,7 @@ ARG REPO
 ARG BRANCH
 ARG EVEREST_CONFIG
 ARG OCPP_CONFIG
+ARG ADDITIONAL_CMAKE_PARAMETERS
 
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
@@ -65,7 +66,7 @@ RUN rm -rf "/workspace/everest/$(basename "${REPO}" .git)/build" && \
     git checkout "${BRANCH}" && \
     mkdir "/workspace/everest/$(basename "${REPO}" .git)/build" && \
     cd "/workspace/everest/$(basename "${REPO}" .git)/build" && \
-    cmake .. -DEVEREST_BUILD_ALL_MODULES=ON -DCMAKE_INSTALL_PREFIX=/opt/everest && \
+    cmake .. -DCMAKE_INSTALL_PREFIX=/opt/everest ${ADDITIONAL_CMAKE_PARAMETERS} && \
     make -j"$(nproc)" install
 
 RUN cp -R "$(grep -m 1 "ocpp_SOURCE_DIR:STATIC=" "/workspace/everest/$(basename "${REPO}" .git)/build/CMakeCache.txt" | sed "s/ocpp_SOURCE_DIR:STATIC=//")/config/v201" /opt/everest/ocpp201config

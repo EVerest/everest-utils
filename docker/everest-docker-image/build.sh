@@ -10,11 +10,14 @@ usage() {
     echo -e "\t--build-date: Build date of the docker image, is reflected in its name and can have an effect on caching - Optional, defaults to the current datetime"
     echo -e "\t--no-ssh: Do not append \"--ssh default\" to docker build - Optional"
     echo -e "\t--container-runtime: Set container runtime (e.g. docker or podman) for build - Optional"
+    echo -e "\t--additional-cmake-parameters: Set additional cmake parameters for build - Optional, default \"-DEVEREST_BUILD_ALL_MODULES=ON\""
     exit 1
 }
 
 ssh_param="--ssh=default"
 container_runtime="docker"
+additional_cmake_parameters="-DEVEREST_BUILD_ALL_MODULES=ON"
+
 while [ ! -z "$1" ]; do
     if [ "$1" == "--repo" ]; then
         repo="${2}"
@@ -39,6 +42,9 @@ while [ ! -z "$1" ]; do
         shift 1
     elif [ "$1" == "--container-runtime" ]; then
         container_runtime="${2}"
+        shift 2
+    elif [ "$1" == "--additional-cmake-parameters" ]; then
+        additional_cmake_parameters="${2}"
         shift 2
     else
         usage
@@ -86,5 +92,6 @@ DOCKER_BUILDKIT=1 ${container_runtime} build \
     --build-arg EVEREST_CONFIG="${conf}" \
     --build-arg OCPP_CONFIG="${ocpp_conf}" \
     --build-arg BRANCH="${branch}" \
+    --build-arg ADDITIONAL_CMAKE_PARAMETERS="${additional_cmake_parameters}" \
     -t "${name}" "${ssh_param}" .
 ${container_runtime} save "${name}":latest | gzip >"$name-${NOW}.tar.gz"
