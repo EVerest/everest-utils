@@ -69,7 +69,8 @@ RUN rm -rf "/workspace/everest/$(basename "${REPO}" .git)/build" && \
     cmake .. -DCMAKE_INSTALL_PREFIX=/opt/everest ${ADDITIONAL_CMAKE_PARAMETERS} && \
     make -j"$(nproc)" install
 
-RUN cp -R "$(grep -m 1 "ocpp_SOURCE_DIR:STATIC=" "/workspace/everest/$(basename "${REPO}" .git)/build/CMakeCache.txt" | sed "s/ocpp_SOURCE_DIR:STATIC=//")/config/v201" /opt/everest/ocpp201config
+# Try to copy the OCPP 2.0.1 config directory to have the init_device_model_db.py script available for (re-)initialization of the device model
+RUN cp -R "$(grep -m 1 "ocpp_SOURCE_DIR:STATIC=" "/workspace/everest/$(basename "${REPO}" .git)/build/CMakeCache.txt" | sed "s/ocpp_SOURCE_DIR:STATIC=//")/config/v201" /opt/everest/ocpp201config || echo "Could not copy OCPP 2.0.1 config directory"
 RUN mkdir -p /opt/everest/config/user-config
 COPY "${EVEREST_CONFIG}" /opt/everest/config/
 COPY "${OCPP_CONFIG}" /opt/everest/config/
