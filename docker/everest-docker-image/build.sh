@@ -89,6 +89,7 @@ fi
 echo "Build date: ${NOW}"
 echo "Using container runtime \"${container_runtime}\" for building. Version: $(${container_runtime} --version)"
 echo "Additional CMake parameters for EVerest build: \"${additional_cmake_parameters}\""
+trap 'echo "Build not successful"; exit 1' ERR
 DOCKER_BUILDKIT=1 ${container_runtime} build \
     --build-arg BUILD_DATE="${NOW}" \
     --build-arg REPO="${repo}" \
