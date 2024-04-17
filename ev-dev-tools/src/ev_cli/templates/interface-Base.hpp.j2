@@ -28,7 +28,7 @@ public:
     {%- else %}
         {{-  var.cpp_type }}
     {%- endif -%}
-     value) {
+    {{ ' value) {' }}
     {% if 'object_type' in var %}
         json json_value = value;
         Object object_value = json_value;
