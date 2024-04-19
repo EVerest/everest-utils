@@ -57,7 +57,7 @@ class OcppTestConfiguration:
     csms_tls_verify_client_certificate: bool = False
     csms_port: str = 9000
     csms_host: str = "127.0.0.1"
-    charge_point_info: ChargePointInfo = field(default_factory=ChargePointInfo())
+    charge_point_info: ChargePointInfo = field(default_factory=ChargePointInfo)
     config_path: Optional[Path] = None
     authorization_info: Optional[AuthorizationInfo] = None
     certificate_info: Optional[CertificateInfo] = None
