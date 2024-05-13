@@ -18,9 +18,23 @@ public:
     {{ info.class_name }}(Everest::ModuleAdapter* adapter, Requirement req, const std::string& module_id)
         : module_id(module_id),
         _adapter(adapter),
-        _req(req),
-        error_manager(adapter->get_error_manager_req(req)),
-        error_state_monitor(adapter->get_error_state_monitor_req(req)) {}
+        _req(req) {
+        if (adapter == nullptr) {
+            EVLOG_error << "adapter is nullptr, please check the initialization of the module";
+            error_manager = nullptr;
+            error_state_monitor = nullptr;
+            EVLOG_error << "error_manager and error_state_monitor are nullptr";
+        } else {
+            error_manager = adapter->get_error_manager_req(req);
+            if (error_manager == nullptr) {
+                EVLOG_error << "error_manager is nullptr";
+            }
+            error_state_monitor = adapter->get_error_state_monitor_req(req);
+            if (error_state_monitor == nullptr) {
+                EVLOG_error << "error_state_monitor is nullptr";
+            }
+        }
+    }
 
     const std::string module_id;
 

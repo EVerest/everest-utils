@@ -19,10 +19,28 @@ public:
     {{ info.class_name }}(Everest::ModuleAdapter* ev, const std::string& name)
         : Everest::ImplementationBase(),
         _ev(ev),
-        _name(name),
-        error_manager(ev->get_error_manager_impl(name)),
-        error_state_monitor(ev->get_error_state_monitor_impl(name)),
-        error_factory(ev->get_error_factory(name)) {}
+        _name(name) {
+        if (ev == nullptr) {
+            EVLOG_error << "ev is nullptr, please check the initialization of the module";
+            error_manager = nullptr;
+            error_state_monitor = nullptr;
+            error_factory = nullptr;
+            EVLOG_error << "error_manager, error_state_monitor and error_factory are nullptr";
+        } else {
+            error_manager = ev->get_error_manager_impl(name);
+            if (error_manager == nullptr) {
+                EVLOG_error << "error_manager is nullptr";
+            }
+            error_state_monitor = ev->get_error_state_monitor_impl(name);
+            if (error_state_monitor == nullptr) {
+                EVLOG_error << "error_state_monitor is nullptr";
+            }
+            error_factory = ev->get_error_factory(name);
+            if (error_factory == nullptr) {
+                EVLOG_error << "error_factory is nullptr";
+            }
+        }
+    }
 
     {% if not vars %}
     // no variables defined for this interface
