@@ -43,6 +43,7 @@ RUN apt-get update \
     libssl-dev \
     libcurl4-openssl-dev \
     pkg-config \
+    libcap-dev \
     libpcap-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
