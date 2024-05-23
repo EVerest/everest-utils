@@ -7,12 +7,25 @@
     "MQTT_SERVER_ADDRESS": "mqtt-server",
     "MQTT_SERVER_PORT": "1883"
   },
-  "extensions": [
-    "ms-python.python",
-    "ms-vscode.cpptools",
-    "twxs.cmake",
-    "ms-vscode.cmake-tools"
-  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-vscode.cpptools",
+        "twxs.cmake",
+        "ms-vscode.cmake-tools"
+      ],
+      "settings": {
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "/bin/bash"
+          }
+        },
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "python.pythonPath": "/usr/bin/python3"
+      }
+    }
+  },
   "postCreateCommand": "",
   "remoteUser": "docker",
   "runArgs": [
@@ -20,13 +33,5 @@
   ],
   "workspaceFolder": "/workspace/everest-cpp",
   "workspaceMount": "source=${localWorkspaceFolder}/../../,target=/workspace,type=bind",
-  "settings": {
-    "terminal.integrated.profiles.linux": {
-      "bash": {
-        "path": "/bin/bash"
-      }
-    },
-    "terminal.integrated.defaultProfile.linux": "bash",
-    "python.pythonPath": "/usr/bin/python3"
-  }
+
 }
