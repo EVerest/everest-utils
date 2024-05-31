@@ -34,8 +34,8 @@ RUN apt-get update \
     clang-tidy \
     cppcheck \
     libboost-all-dev \
-    maven \
-    openjdk-11-jdk \
+    # maven \
+    # openjdk-11-jdk \
     nodejs \
     npm \
     libsqlite3-dev \
