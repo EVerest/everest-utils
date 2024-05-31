@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=debian:11
+ARG BASE_IMAGE=debian:bookworm
 FROM ${BASE_IMAGE}
 
 ARG BASE_IMAGE
