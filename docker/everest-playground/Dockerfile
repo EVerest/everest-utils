@@ -35,7 +35,7 @@ RUN apt-get update \
     cppcheck \
     libboost-all-dev \
     maven \
-    openjdk-11-jdk \
+    openjdk-17-jdk \
     nodejs \
     npm \
     libsqlite3-dev \

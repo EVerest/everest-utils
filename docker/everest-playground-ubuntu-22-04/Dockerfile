@@ -33,7 +33,7 @@ RUN apt-get update \
     cppcheck \
     libboost-all-dev \
     maven \
-    openjdk-11-jdk \
+    openjdk-17-jdk \
     libsqlite3-dev \
     python3-pip \
     libssl-dev \
