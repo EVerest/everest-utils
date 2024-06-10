@@ -11,14 +11,15 @@
 
 #include <framework/runtime.hpp>
 #include <utils/types.hpp>
-#if __has_include(<cmake-vars.h>)
-#include <cmake-vars.h>
-#endif
+#include <generated/version_information.hpp>
 #ifndef PROJECT_NAME
 #define PROJECT_NAME "undefined project"
 #endif
 #ifndef PROJECT_VERSION
 #define PROJECT_VERSION "undefined version"
+#endif
+#ifndef GIT_VERSION
+#define GIT_VERSION "undefined git version"
 #endif
 
 {% if info.enable_global_errors %}
@@ -147,7 +148,7 @@ int main(int argc, char* argv[]) {
     auto module_loader = Everest::ModuleLoader(argc, argv, Everest::ModuleCallbacks(
         module::register_module_adapter, module::everest_register,
         module::LdEverest::init, module::LdEverest::ready),
-        PROJECT_NAME, PROJECT_VERSION);
+        {PROJECT_NAME, PROJECT_VERSION, GIT_VERSION});
 
     return module_loader.initialize();
 }
