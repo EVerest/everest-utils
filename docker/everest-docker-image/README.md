@@ -15,7 +15,7 @@ a docker image of everest-core will be created using the given EVerest configura
 Specify the following options to create your desired docker image of EVerest:
   
 * repo: Git repository (e.g. https://github.com/EVerest/everest-core.git) - Optional, defaults to: https://github.com/EVerest/everest-core.git
-* branch: Git branch or tag name (e.g main or 2022-11.0) - Optional, defaults to: main
+* branch: Git branch or tag name (e.g main or 2024.6.0) - Optional, defaults to: main
 * conf: Path to EVerest config file (e.g. /home/$(whoami)/checkout/everest-workspace/everest-core/config/ config-sil.yaml) - Required.
 * ocpp-conf: Path to EVerest OCPP config file (e.g. /home/$(whoami)/checkout/everest-workspace/libocpp/aux/config-docker.json) - Optional, defaults to: ocpp-config.json
 * name: Name of the docker image (e.g everest-core) - Optional, defaults to: everest-core
@@ -38,4 +38,4 @@ docker run --rm -it --network host <IMAGE_NAME>
 ```
 
 ## Run EVerest with OCPP 2.0.1 in docker
-To run EVerest with OCPP 2.0.1 you can use the provided docker-compose.yaml with the example run-ac-pwm.sh script
+To run EVerest with OCPP 2.0.1 you can use the provided docker-compose.yaml with the example run-config-fallback.sh script
