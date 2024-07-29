@@ -33,4 +33,4 @@ cd everest-core/build
 echo ""
 echo "You can now build everest-core with the following commands:"
 echo ""
-echo "cmake .. && make install -j$(nproc)"
+echo "cmake .. -DBUILD_SHARED_LIBS=on && make install -j$(nproc)"
