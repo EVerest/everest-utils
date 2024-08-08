@@ -116,19 +116,3 @@ class LibOCPP201ConfigurationHelper(LibOCPPConfigurationHelperBase):
                               central_system_host: str) -> OCPPConfigAdjustmentStrategy:
         return _OCPP201NetworkConnectionProfileAdjustment(central_system_port, central_system_host)
 
-    @staticmethod
-    def create_temporary_ocpp_configuration_db(libocpp_path: Path,
-                                               device_model_schemas_path: Path,
-                                               ocpp_configuration_file: Path,
-                                               target_directory: Path):
-        import_path = libocpp_path / "config/v201"
-        sys.path.append(str(import_path))
-        from init_device_model_db import DeviceModelDatabaseInitializer
-
-        database_file = target_directory / 'device_model_storage.db'
-        database_initializer = DeviceModelDatabaseInitializer(database_file)
-
-        database_initializer.initialize_database(schemas_path=device_model_schemas_path)
-        database_initializer.insert_config_and_default_values(
-            config_file=ocpp_configuration_file,
-            schemas_path=device_model_schemas_path)
