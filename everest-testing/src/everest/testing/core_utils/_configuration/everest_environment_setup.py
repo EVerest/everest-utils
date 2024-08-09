@@ -88,6 +88,7 @@ class EverestTestEnvironmentSetup:
     class _EverestEnvironmentTemporaryPaths:
         """ Paths of the temporary configuration files / data """
         certs_dir: Path  # used by both OCPP and evse security
+        ocpp_config_path: Path
         ocpp_config_file: Path
         ocpp_user_config_file: Path
         ocpp_database_dir: Path
@@ -142,6 +143,9 @@ class EverestTestEnvironmentSetup:
     def _create_temporary_directory_structure(self, tmp_path: Path) -> _EverestEnvironmentTemporaryPaths:
         ocpp_config_dir = tmp_path / "ocpp_config"
         ocpp_config_dir.mkdir(exist_ok=True)
+        if self._ocpp_config.ocpp_version == OCPPVersion.ocpp201:
+            component_config_path = ocpp_config_dir / "component_config"
+            component_config_path.mkdir(exist_ok=True)
         certs_dir = tmp_path / "certs"
         certs_dir.mkdir(exist_ok=True)
         ocpp_logs_dir = ocpp_config_dir / "logs"
@@ -153,6 +157,7 @@ class EverestTestEnvironmentSetup:
         logging.info(f"temp ocpp config files directory: {ocpp_config_dir}")
 
         return self._EverestEnvironmentTemporaryPaths(
+            ocpp_config_path=ocpp_config_dir / "component_config",
             ocpp_config_file=ocpp_config_dir / "config.json",
             ocpp_user_config_file=ocpp_config_dir / "user_config.json",
             ocpp_database_dir=ocpp_config_dir,
@@ -173,6 +178,7 @@ class EverestTestEnvironmentSetup:
             )
         elif self._ocpp_config.ocpp_version == OCPPVersion.ocpp201:
             ocpp_paths = OCPPModulePaths201(
+                ChargePointConfigPath=str(temporary_paths.ocpp_config_path),
                 MessageLogPath=str(temporary_paths.ocpp_message_log_directory),
                 CoreDatabasePath=str(temporary_paths.ocpp_database_dir),
                 DeviceModelDatabasePath=str(temporary_paths.ocpp_database_dir / "device_model_storage.db"),
@@ -199,12 +205,13 @@ class EverestTestEnvironmentSetup:
                 if self._ocpp_config.device_model_component_config_path \
                 else self._ocpp_config.libocpp_path / 'config/v201/component_config'
 
-
         liboccp_configuration_helper.generate_ocpp_config(
             central_system_port=self._ocpp_config.central_system_port,
             central_system_host=self._ocpp_config.central_system_host,
-            source_ocpp_config_file=source_ocpp_config,
-            target_ocpp_config_file=temporary_paths.ocpp_config_file,
+            source_ocpp_config_path=source_ocpp_config,
+            target_ocpp_config_path=temporary_paths.ocpp_config_file \
+                if self._ocpp_config.ocpp_version == OCPPVersion.ocpp16 \
+                else temporary_paths.ocpp_config_path,
             target_ocpp_user_config_file=temporary_paths.ocpp_user_config_file,
             configuration_strategies=self._ocpp_config.configuration_strategies
         )
