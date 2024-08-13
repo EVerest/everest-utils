@@ -144,8 +144,10 @@ class EverestTestEnvironmentSetup:
         ocpp_config_dir = tmp_path / "ocpp_config"
         ocpp_config_dir.mkdir(exist_ok=True)
         if self._ocpp_config.ocpp_version == OCPPVersion.ocpp201:
-            component_config_path = ocpp_config_dir / "component_config"
-            component_config_path.mkdir(exist_ok=True)
+            component_config_path_standardized = ocpp_config_dir / "component_config" / "standardized"
+            component_config_path_custom = ocpp_config_dir / "component_config" / "custom"
+            component_config_path_standardized.mkdir(parents=True, exist_ok=True)
+            component_config_path_custom.mkdir(parents=True, exist_ok=True)
         certs_dir = tmp_path / "certs"
         certs_dir.mkdir(exist_ok=True)
         ocpp_logs_dir = ocpp_config_dir / "logs"
@@ -178,7 +180,7 @@ class EverestTestEnvironmentSetup:
             )
         elif self._ocpp_config.ocpp_version == OCPPVersion.ocpp201:
             ocpp_paths = OCPPModulePaths201(
-                ChargePointConfigPath=str(temporary_paths.ocpp_config_path),
+                DeviceModelConfigPath=str(temporary_paths.ocpp_config_path),
                 MessageLogPath=str(temporary_paths.ocpp_message_log_directory),
                 CoreDatabasePath=str(temporary_paths.ocpp_database_dir),
                 DeviceModelDatabasePath=str(temporary_paths.ocpp_database_dir / "device_model_storage.db"),

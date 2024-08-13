@@ -49,7 +49,7 @@ class LibOCPPConfigurationHelperBase(ABC):
         for v in [self._get_default_strategy(central_system_port, central_system_host)] + configuration_strategies:
             config = v.adjust_ocpp_configuration(config)
 
-        self._store_config(self, target_ocpp_config_path)
+        self._store_config(config, target_ocpp_config_path)
         target_ocpp_user_config_file.write_text("{}")
 
     @abstractmethod
@@ -112,7 +112,7 @@ class _OCPP201NetworkConnectionProfileAdjustment(OCPPConfigAdjustmentStrategy):
     @staticmethod
     def _get_value_from_v201_config(ocpp_config: json, component_name: str, variable_name: str,
                                     variable_attribute_type: str):
-        for (component, schema) in ocpp_config:
+        for (component, schema) in ocpp_config.items():
             if component == component_name:
                 attributes = schema["properties"][variable_name]["attributes"]
                 for attribute in attributes:
@@ -123,7 +123,7 @@ class _OCPP201NetworkConnectionProfileAdjustment(OCPPConfigAdjustmentStrategy):
     def _set_value_in_v201_config(ocpp_config: json, component_name: str, variable_name: str,
                                   variable_attribute_type: str,
                                   value: str):
-        for (component, schema) in ocpp_config:
+        for (component, schema) in ocpp_config.items():
             if component == component_name:
                 attributes = schema["properties"][variable_name]["attributes"]
                 for attribute in attributes:
@@ -135,8 +135,8 @@ class LibOCPP201ConfigurationHelper(LibOCPPConfigurationHelperBase):
 
     def _get_config(self, source_ocpp_config_path: Path):
         config = {}
-        file_list_standardized = glob(source_ocpp_config_path / "standardized/*.json")
-        file_list_custom = glob(source_ocpp_config_path / "custom/*.json")
+        file_list_standardized = glob(str(source_ocpp_config_path / "standardized" / "*.json"), recursive=False)
+        file_list_custom = glob(str(source_ocpp_config_path / "custom" / "*.json"), recursive=False)
         file_list = file_list_standardized + file_list_custom
         for file in file_list:
             # Get component from file name
@@ -155,6 +155,7 @@ class LibOCPP201ConfigurationHelper(LibOCPPConfigurationHelperBase):
         # Just store all in the 'standardized' folder
         path = target_ocpp_config_path / "standardized"
         for key, value in config.items():
-            file_name = path / key + '.json'
-            with file_name.open("w") as f:
+            file_name = path / (key + '.json')
+            file_name.parent.mkdir(parents=True, exist_ok=True)
+            with file_name.open("w+") as f:
                 json.dump(value, f)
