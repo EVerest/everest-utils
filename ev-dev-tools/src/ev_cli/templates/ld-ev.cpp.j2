@@ -1,6 +1,6 @@
 {% from "helper_macros.j2" import print_template_info, var_to_cpp, print_spdx_line %}
 {{ print_spdx_line('Apache-2.0') }}
-{{ print_template_info('4') }}
+{{ print_template_info('5') }}
 
 #include "{{ info.ld_ev_header }}"
 
@@ -85,7 +85,7 @@ void register_module_adapter(Everest::ModuleAdapter module_adapter) {
     adapter = std::move(module_adapter);
 }
 
-std::vector<Everest::cmd> everest_register(const json& connections) {
+std::vector<Everest::cmd> everest_register(const std::map<std::string, std::vector<RequirementConnection>>& requirement_connections) {
     EVLOG_debug << "everest_register() called on module {{ info.name }}";
 
     adapter.check_complete();
@@ -99,25 +99,28 @@ std::vector<Everest::cmd> everest_register(const json& connections) {
     {# FIXME: needs refactoring #}
     {% if requirement.is_vector %}
     auto r_{{ requirement.id }} = std::vector<std::unique_ptr<{{ requirement.class_name }}>>();
-    if (connections.contains("{{ requirement.id }}")) {
-        auto requirement_connection = connections.at("{{ requirement.id }}");
+    if (requirement_connections.find("{{ requirement.id }}") != requirement_connections.end()) {
+        auto requirement_connection = requirement_connections.at("{{ requirement.id }}");
         for (size_t idx = 0; idx < requirement_connection.size(); idx++) {
-            auto requirement_module_id = requirement_connection[idx].at("module_id");
-            r_{{ requirement.id }}.emplace_back(std::make_unique<{{ requirement.class_name }}>(&adapter, Requirement{"{{ requirement.id }}", idx}, requirement_module_id));
+            auto requirement_module_id = requirement_connection.at(idx).requirement_module_id;
+            auto requirement = requirement_connection.at(idx).requirement;
+            r_{{ requirement.id }}.emplace_back(std::make_unique<{{ requirement.class_name }}>(&adapter, requirement, requirement_module_id));
         }
     }
     {% else %}
     std::string r_{{ requirement.id }}_requirement_module_id;
-    if (connections.contains("{{ requirement.id }}")) {
-        auto requirement_connection = connections.at("{{ requirement.id }}");
+    Requirement r_{{ requirement.id }}_requirement;
+    if (requirement_connections.find("{{ requirement.id }}") != requirement_connections.end()) {
+        auto requirement_connection = requirement_connections.at("{{ requirement.id }}");
         if (requirement_connection.size() > 0) {
-            r_{{ requirement.id }}_requirement_module_id = requirement_connection[0].at("module_id");
+            r_{{ requirement.id }}_requirement_module_id = requirement_connection.at(0).requirement_module_id;
+            r_{{ requirement.id }}_requirement = requirement_connection.at(0).requirement;
         }
     }
-    auto r_{{ requirement.id }} = std::make_unique<{{ requirement.class_name }}>(&adapter, Requirement{"{{ requirement.id }}", 0}, r_{{ requirement.id }}_requirement_module_id);
+    auto r_{{ requirement.id }} = std::make_unique<{{ requirement.class_name }}>(&adapter, r_{{ requirement.id }}_requirement, r_{{ requirement.id }}_requirement_module_id);
     {% endif %}
     {% else %}
-        (void) connections; // no requirements -> unused connections
+        (void) requirement_connections; // no requirements -> unused requirement_connections
     {% endfor %}
 
     {% if info.enable_external_mqtt %}

@@ -3,7 +3,7 @@
 #ifndef {{ info.hpp_guard }}
 #define {{ info.hpp_guard }}
 
-{{ print_template_info('3') }}
+{{ print_template_info('4') }}
 
 #include <framework/ModuleAdapter.hpp>
 #include <utils/types.hpp>
@@ -144,6 +144,10 @@ public:
     {% endif %}
 
     std::shared_ptr<Everest::error::ErrorStateMonitor> error_state_monitor;
+
+    std::optional<Mapping> get_mapping() {
+        return _req.mapping;
+    }
 
 private:
     std::shared_ptr<Everest::error::ErrorManagerReq> error_manager;
