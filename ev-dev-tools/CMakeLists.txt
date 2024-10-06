@@ -1,4 +1,4 @@
-ev_create_pip_install_targets(
+ev_pip_install_local(
     PACKAGE_NAME
         "ev-dev-tools"
 )
