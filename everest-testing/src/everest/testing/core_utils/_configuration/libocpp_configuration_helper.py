@@ -52,6 +52,8 @@ class LibOCPPConfigurationHelperBase(ABC):
         self._store_config(config, target_ocpp_config_path)
         target_ocpp_user_config_file.write_text("{}")
 
+        return config
+
     @abstractmethod
     def _get_config(self, source_ocpp_config_path: Path):
         pass

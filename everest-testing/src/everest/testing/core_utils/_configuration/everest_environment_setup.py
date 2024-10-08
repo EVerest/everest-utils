@@ -114,6 +114,7 @@ class EverestTestEnvironmentSetup:
             self._standalone_module = self._probe_config.module_id
         self._additional_everest_config_strategies = everest_config_strategies if everest_config_strategies else []
         self._everest_core = None
+        self._ocpp_configuration = None
 
     def setup_environment(self, tmp_path: Path):
 
@@ -128,7 +129,7 @@ class EverestTestEnvironmentSetup:
                                          tmp_path=tmp_path)
 
         if self._ocpp_config:
-            self._setup_libocpp_configuration(
+            self._ocpp_configuration = self._setup_libocpp_configuration(
                 temporary_paths=temporary_paths
             )
 
@@ -139,6 +140,10 @@ class EverestTestEnvironmentSetup:
     def everest_core(self) -> EverestCore:
         assert self._everest_core, "Everest Core not initialized; run 'setup_environment' first"
         return self._everest_core
+
+    @property
+    def ocpp_config(self):
+        return self._ocpp_configuration
 
     def _create_temporary_directory_structure(self, tmp_path: Path) -> _EverestEnvironmentTemporaryPaths:
         ocpp_config_dir = tmp_path / "ocpp_config"
@@ -207,7 +212,7 @@ class EverestTestEnvironmentSetup:
                 if self._ocpp_config.device_model_component_config_path \
                 else self._ocpp_config.libocpp_path / 'config/v201/component_config'
 
-        liboccp_configuration_helper.generate_ocpp_config(
+        return liboccp_configuration_helper.generate_ocpp_config(
             central_system_port=self._ocpp_config.central_system_port,
             central_system_host=self._ocpp_config.central_system_host,
             source_ocpp_config_path=source_ocpp_config,
