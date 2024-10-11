@@ -579,6 +579,14 @@ def module_genld(args):
         helpers.write_content_to_file_and_check_template(file_info, 'update-if-non-existent')
 
 
+def module_get_templates(args):
+    interface_files = args.seperator.join(
+        [templates['ld-ev.hpp'].filename,
+         templates['ld-ev.cpp'].filename])
+
+    print(f'{interface_files}')
+
+
 def interface_genhdr(args):
     # Always generate type info before generating interfaces
     for type_with_namespace in list_types_with_namespace():
@@ -610,6 +618,14 @@ def interface_genhdr(args):
         helpers.write_content_to_file_and_check_template(if_parts['base'], primary_update_strategy, args.diff)
         helpers.write_content_to_file_and_check_template(if_parts['exports'], primary_update_strategy, args.diff)
         helpers.write_content_to_file_and_check_template(if_parts['types'], primary_update_strategy, args.diff)
+
+
+def interface_get_templates(args):
+    interface_files = args.seperator.join(
+        [templates['interface_base'].filename,
+         templates['interface_exports'].filename])
+
+    print(f'{interface_files}')
 
 
 def helpers_genuuids(args):
@@ -684,6 +700,12 @@ def types_genhdr(args):
         helpers.write_content_to_file(type_parts['types'], primary_update_strategy, args.diff)
 
 
+def types_get_templates(args):
+    interface_files = templates['types.hpp'].filename
+
+    print(f'{interface_files}')
+
+
 def main():
     global validators, everest_dirs, work_dir
 
@@ -740,6 +762,11 @@ def main():
                                   'files (default: {everest-dir}/build/generated/generated/modules)')
     mod_genld_parser.set_defaults(action_handler=module_genld)
 
+    mod_get_templates_parser = mod_actions.add_parser(
+        'get-templates', aliases=['gt'], parents=[common_parser], help='get paths to template files')
+    mod_get_templates_parser.add_argument('-s', '--seperator', type=str, default=';', help='Seperator between interface files (default: ;)')
+    mod_get_templates_parser.set_defaults(action_handler=module_get_templates)
+
     if_actions = parser_if.add_subparsers(metavar='<action>', help='available actions', required=True)
     if_genhdr_parser = if_actions.add_parser(
         'generate-headers', aliases=['gh'], parents=[common_parser], help='generate headers')
@@ -751,6 +778,11 @@ def main():
                                   'be generated - if no interface is given, all will be processed and non-processable '
                                   'will be skipped')
     if_genhdr_parser.set_defaults(action_handler=interface_genhdr)
+
+    if_get_templates_parser = if_actions.add_parser(
+        'get-templates', aliases=['gt'], parents=[common_parser], help='get paths to template files')
+    if_get_templates_parser.add_argument('-s', '--seperator', type=str, default=';', help='Seperator between interface files (default: ;)')
+    if_get_templates_parser.set_defaults(action_handler=interface_get_templates)
 
     hlp_actions = parser_hlp.add_subparsers(metavar='<action>', help='available actions', required=True)
     hlp_genuuid_parser = hlp_actions.add_parser('generate-uuids', help='generete uuids')
@@ -778,6 +810,12 @@ def main():
                                      'be generated - if no type is given, all will be processed and non-processable '
                                      'will be skipped')
     types_genhdr_parser.set_defaults(action_handler=types_genhdr)
+
+    types_get_templates_parser = types_actions.add_parser(
+        'get-templates', aliases=['gt'], parents=[common_parser], help='get paths to template files')
+    types_get_templates_parser.add_argument('-s', '--seperator', type=str, default=';', help='Seperator between interface files (default: ;)')
+    types_get_templates_parser.set_defaults(action_handler=types_get_templates)
+
 
     args = parser.parse_args()
 
