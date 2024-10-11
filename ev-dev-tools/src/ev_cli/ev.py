@@ -697,7 +697,7 @@ def types_genhdr(args):
         if not args.disable_clang_format:
             helpers.clang_format(args.clang_format_file, type_parts['types'])
 
-        helpers.write_content_to_file(type_parts['types'], primary_update_strategy, args.diff)
+        helpers.write_content_to_file_and_check_template(type_parts['types'], primary_update_strategy, args.diff)
 
 
 def types_get_templates(args):
