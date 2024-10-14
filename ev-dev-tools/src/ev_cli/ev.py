@@ -592,7 +592,7 @@ def module_genld(args):
 
 
 def module_get_templates(args):
-    interface_files = args.seperator.join(
+    interface_files = args.separator.join(
         [templates['ld-ev.hpp'].filename,
          templates['ld-ev.cpp'].filename])
 
@@ -633,7 +633,7 @@ def interface_genhdr(args):
 
 
 def interface_get_templates(args):
-    interface_files = args.seperator.join(
+    interface_files = args.separator.join(
         [templates['interface_base'].filename,
          templates['interface_exports'].filename])
 
@@ -776,7 +776,7 @@ def main():
 
     mod_get_templates_parser = mod_actions.add_parser(
         'get-templates', aliases=['gt'], parents=[common_parser], help='get paths to template files')
-    mod_get_templates_parser.add_argument('-s', '--seperator', type=str, default=';', help='Seperator between interface files (default: ;)')
+    mod_get_templates_parser.add_argument('-s', '--separator', type=str, default=';', help='separator between interface files (default: ;)')
     mod_get_templates_parser.set_defaults(action_handler=module_get_templates)
 
     if_actions = parser_if.add_subparsers(metavar='<action>', help='available actions', required=True)
@@ -793,7 +793,7 @@ def main():
 
     if_get_templates_parser = if_actions.add_parser(
         'get-templates', aliases=['gt'], parents=[common_parser], help='get paths to template files')
-    if_get_templates_parser.add_argument('-s', '--seperator', type=str, default=';', help='Seperator between interface files (default: ;)')
+    if_get_templates_parser.add_argument('-s', '--separator', type=str, default=';', help='separator between interface files (default: ;)')
     if_get_templates_parser.set_defaults(action_handler=interface_get_templates)
 
     hlp_actions = parser_hlp.add_subparsers(metavar='<action>', help='available actions', required=True)
@@ -825,7 +825,7 @@ def main():
 
     types_get_templates_parser = types_actions.add_parser(
         'get-templates', aliases=['gt'], parents=[common_parser], help='get paths to template files')
-    types_get_templates_parser.add_argument('-s', '--seperator', type=str, default=';', help='Seperator between interface files (default: ;)')
+    types_get_templates_parser.add_argument('-s', '--separator', type=str, default=';', help='separator between interface files (default: ;)')
     types_get_templates_parser.set_defaults(action_handler=types_get_templates)
 
 
