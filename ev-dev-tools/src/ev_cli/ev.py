@@ -776,7 +776,7 @@ def main():
 
     mod_get_templates_parser = mod_actions.add_parser(
         'get-templates', aliases=['gt'], parents=[common_parser], help='get paths to template files')
-    mod_get_templates_parser.add_argument('-s', '--separator', type=str, default=';', help='separator between interface files (default: ;)')
+    mod_get_templates_parser.add_argument('-s', '--separator', type=str, default='\n', help='separator between interface files (default: ;)')
     mod_get_templates_parser.set_defaults(action_handler=module_get_templates)
 
     if_actions = parser_if.add_subparsers(metavar='<action>', help='available actions', required=True)
