@@ -239,6 +239,7 @@ def generate_module_loader_files(rel_mod_dir, output_dir):
         'path': output_dir / mod / 'ld-ev.hpp',
         'printable_name': f'{mod}/ld-ev.hpp',
         'content': templates['ld-ev.hpp'].render(tmpl_data),
+        'template_mtime': Path(templates['ld-ev.hpp'].filename).stat().st_mtime,
         'last_mtime': mod_path.stat().st_mtime
     })
 
@@ -248,6 +249,7 @@ def generate_module_loader_files(rel_mod_dir, output_dir):
         'path': output_dir / mod / 'ld-ev.cpp',
         'printable_name': f'{mod}/ld-ev.cpp',
         'content': templates['ld-ev.cpp'].render(tmpl_data),
+        'template_mtime': Path(templates['ld-ev.cpp'].filename).stat().st_mtime,
         'last_mtime': mod_path.stat().st_mtime
     })
 
@@ -367,6 +369,7 @@ def generate_module_files(rel_mod_dir, update_flag):
             'path': output_path / impl_hpp_file,
             'printable_name': impl_hpp_file,
             'content': templates['interface_impl.hpp'].render(if_tmpl_data),
+            'template_mtime': Path(templates['interface_impl.hpp'].filename).stat().st_mtime,
             'last_mtime': last_mtime
         })
 
@@ -375,6 +378,7 @@ def generate_module_files(rel_mod_dir, update_flag):
             'path': output_path / impl_cpp_file,
             'printable_name': impl_cpp_file,
             'content': templates['interface_impl.cpp'].render(if_tmpl_data),
+            'template_mtime': Path(templates['interface_impl.cpp'].filename).stat().st_mtime,
             'last_mtime': last_mtime
         })
 
@@ -384,6 +388,7 @@ def generate_module_files(rel_mod_dir, update_flag):
         'abbr': 'cmakelists',
         'path': cmakelists_file,
         'content': templates['cmakelists'].render(tmpl_data),
+        'template_mtime': Path(templates['cmakelists'].filename).stat().st_mtime,
         'last_mtime': mod_path.stat().st_mtime
     })
 
@@ -395,6 +400,7 @@ def generate_module_files(rel_mod_dir, update_flag):
         'abbr': 'module.hpp',
         'path': mod_hpp_file,
         'content': templates['module.hpp'].render(tmpl_data),
+        'template_mtime': Path(templates['module.hpp'].filename).stat().st_mtime,
         'last_mtime': mod_path.stat().st_mtime
     })
 
@@ -404,6 +410,7 @@ def generate_module_files(rel_mod_dir, update_flag):
         'abbr': 'module.cpp',
         'path': mod_cpp_file,
         'content': templates['module.cpp'].render(tmpl_data),
+        'template_mtime': Path(templates['module.cpp'].filename).stat().st_mtime,
         'last_mtime': mod_path.stat().st_mtime
     })
 
@@ -412,6 +419,7 @@ def generate_module_files(rel_mod_dir, update_flag):
         'abbr': 'doc.rst',
         'path': output_path / 'doc.rst',
         'content': templates['doc.rst'].render(tmpl_data),
+        'template_mtime': Path(templates['doc.rst'].filename).stat().st_mtime,
         'last_mtime': mod_path.stat().st_mtime
     })
 
@@ -420,6 +428,7 @@ def generate_module_files(rel_mod_dir, update_flag):
         'abbr': 'index.rst',
         'path': output_path / 'docs' / 'index.rst',
         'content': templates['index.rst'].render(tmpl_data),
+        'template_mtime': Path(templates['index.rst'].filename).stat().st_mtime,
         'last_mtime': mod_path.stat().st_mtime
     })
 
@@ -474,6 +483,7 @@ def generate_interface_headers(interface, all_interfaces_flag, output_dir):
     if_parts['base'] = {
         'path': base_file,
         'content': templates['interface_base'].render(tmpl_data),
+        'template_mtime': Path(templates['interface_base'].filename).stat().st_mtime,
         'last_mtime': last_mtime,
         'printable_name': base_file.relative_to(output_path.parent)
     }
@@ -487,6 +497,7 @@ def generate_interface_headers(interface, all_interfaces_flag, output_dir):
     if_parts['exports'] = {
         'path': exports_file,
         'content': templates['interface_exports'].render(tmpl_data),
+        'template_mtime': Path(templates['interface_exports'].filename).stat().st_mtime,
         'last_mtime': last_mtime,
         'printable_name': exports_file.relative_to(output_path.parent)
     }
@@ -499,6 +510,7 @@ def generate_interface_headers(interface, all_interfaces_flag, output_dir):
     if_parts['types'] = {
         'path': types_file,
         'content': templates['types.hpp'].render(tmpl_data),
+        'template_mtime': Path(templates['types.hpp'].filename).stat().st_mtime,
         'last_mtime': last_mtime,
         'printable_name': types_file.relative_to(output_path.parent)
     }
