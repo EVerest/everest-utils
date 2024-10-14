@@ -670,6 +670,8 @@ def print_available_mod_files(mod_files):
 
 
 def is_template_newer(file_info) -> Tuple[bool, str]:
+    if not file_info['path'].exists():
+        return (True, f' (Generated file did not exist)')
     if file_info['template_mtime'] > file_info['path'].stat().st_mtime:
         return (True, f' (Template file has changed since last generation)')
     return (False, '')
