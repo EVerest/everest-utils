@@ -576,7 +576,7 @@ def module_genld(args):
             helpers.clang_format(args.clang_format_file, file_info)
 
     for file_info in loader_files:
-        helpers.write_content_to_file_and_check_template(file_info, 'update-if-non-existent')
+        helpers.write_content_to_file(file_info, 'force-update')
 
 
 def module_get_templates(args):
@@ -615,9 +615,9 @@ def interface_genhdr(args):
             helpers.clang_format(args.clang_format_file, if_parts['exports'])
             helpers.clang_format(args.clang_format_file, if_parts['types'])
 
-        helpers.write_content_to_file_and_check_template(if_parts['base'], primary_update_strategy, args.diff)
-        helpers.write_content_to_file_and_check_template(if_parts['exports'], primary_update_strategy, args.diff)
-        helpers.write_content_to_file_and_check_template(if_parts['types'], primary_update_strategy, args.diff)
+        helpers.write_content_to_file(if_parts['base'], primary_update_strategy, args.diff)
+        helpers.write_content_to_file(if_parts['exports'], primary_update_strategy, args.diff)
+        helpers.write_content_to_file(if_parts['types'], primary_update_strategy, args.diff)
 
 
 def interface_get_templates(args):

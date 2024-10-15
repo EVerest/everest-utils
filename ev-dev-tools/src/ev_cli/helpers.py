@@ -97,7 +97,6 @@ cpp_type_map = {
     'object': 'Object',
 }
 
-template_version_pattern = '//\n// AUTO GENERATED - DO NOT EDIT!\n// template version (\d+)'
 
 def clang_format(config_file_path, file_info):
     # check if we handle cpp and hpp files
@@ -671,26 +670,7 @@ def print_available_mod_files(mod_files):
             print(f'  {file_info["abbr"]}')
 
 
-def is_template_version_newer(file_info) -> Tuple[bool, str]:
-    try:
-        template_version = 0
-        generated_version = 0
-        template_match = re.search(template_version_pattern, file_info['content'])
-        if template_match:
-            template_version = int(template_match.group(1))
-        with open(file_info['path']) as generated_file:
-            content = generated_file.read()
-            generated_match = re.search(template_version_pattern, content)
-            if generated_match:
-                generated_version = int(generated_match.group(1))
-                if template_version > generated_version:
-                    return (True, f' (template version updated from {generated_version} -> {template_version})')
-    except Exception:
-        pass
-    return (False, '')
-
-
-def write_content_to_file(file_info, strategy, only_diff=False, reason = ''):
+def write_content_to_file(file_info, strategy, only_diff=False):
     # strategy:
     #   update: update only if dest older or not existent
     #   force-update: update, even if dest newer
@@ -727,18 +707,9 @@ def write_content_to_file(file_info, strategy, only_diff=False, reason = ''):
     else:
         raise Exception(f'Invalid strategy "{strategy}"\nSupported strategies: {strategies}')
 
-    print(f'{method} file {printable_name}{reason}')
+    print(f'{method} file {printable_name}')
 
     if not file_dir.exists():
         file_dir.mkdir(parents=True, exist_ok=True)
 
     file_path.write_text(file_info['content'])
-
-
-def write_content_to_file_and_check_template(file_info, strategy, only_diff=False):
-    # check if template version is newer and force-update file if it is
-    update_strategy = strategy
-    (newer, reason) = is_template_version_newer(file_info)
-    if newer:
-        update_strategy = 'force-update'
-    write_content_to_file(file_info, update_strategy, only_diff, reason)
