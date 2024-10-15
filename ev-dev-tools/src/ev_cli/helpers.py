@@ -680,10 +680,10 @@ def is_template_newer(file_info) -> Tuple[bool, str]:
     generated_path = file_info['path']
 
     if not generated_path.exists():
-        return (True, f' (Generated file did not exist)')
+        return (True, ' (Generated file did not exist)')
 
     if get_mtime(template_path) > get_mtime(generated_path):
-        return (True, f' (Template file has changed since last generation)')
+        return (True, ' (Template file has changed since last generation)')
 
     return (False, '')
 
