@@ -239,7 +239,7 @@ def generate_module_loader_files(rel_mod_dir, output_dir):
         'path': output_dir / mod / 'ld-ev.hpp',
         'printable_name': f'{mod}/ld-ev.hpp',
         'content': templates['ld-ev.hpp'].render(tmpl_data),
-        'template_mtime': Path(templates['ld-ev.hpp'].filename).stat().st_mtime,
+        'template_path': Path(templates['ld-ev.hpp'].filename),
         'last_mtime': mod_path.stat().st_mtime
     })
 
@@ -249,7 +249,7 @@ def generate_module_loader_files(rel_mod_dir, output_dir):
         'path': output_dir / mod / 'ld-ev.cpp',
         'printable_name': f'{mod}/ld-ev.cpp',
         'content': templates['ld-ev.cpp'].render(tmpl_data),
-        'template_mtime': Path(templates['ld-ev.cpp'].filename).stat().st_mtime,
+        'template_path': Path(templates['ld-ev.cpp'].filename),
         'last_mtime': mod_path.stat().st_mtime
     })
 
@@ -369,7 +369,7 @@ def generate_module_files(rel_mod_dir, update_flag):
             'path': output_path / impl_hpp_file,
             'printable_name': impl_hpp_file,
             'content': templates['interface_impl.hpp'].render(if_tmpl_data),
-            'template_mtime': Path(templates['interface_impl.hpp'].filename).stat().st_mtime,
+            'template_path': Path(templates['interface_impl.hpp'].filename),
             'last_mtime': last_mtime
         })
 
@@ -378,7 +378,7 @@ def generate_module_files(rel_mod_dir, update_flag):
             'path': output_path / impl_cpp_file,
             'printable_name': impl_cpp_file,
             'content': templates['interface_impl.cpp'].render(if_tmpl_data),
-            'template_mtime': Path(templates['interface_impl.cpp'].filename).stat().st_mtime,
+            'template_path': Path(templates['interface_impl.cpp'].filename),
             'last_mtime': last_mtime
         })
 
@@ -388,7 +388,7 @@ def generate_module_files(rel_mod_dir, update_flag):
         'abbr': 'cmakelists',
         'path': cmakelists_file,
         'content': templates['cmakelists'].render(tmpl_data),
-        'template_mtime': Path(templates['cmakelists'].filename).stat().st_mtime,
+        'template_path': Path(templates['cmakelists'].filename),
         'last_mtime': mod_path.stat().st_mtime
     })
 
@@ -400,7 +400,7 @@ def generate_module_files(rel_mod_dir, update_flag):
         'abbr': 'module.hpp',
         'path': mod_hpp_file,
         'content': templates['module.hpp'].render(tmpl_data),
-        'template_mtime': Path(templates['module.hpp'].filename).stat().st_mtime,
+        'template_path': Path(templates['module.hpp'].filename),
         'last_mtime': mod_path.stat().st_mtime
     })
 
@@ -410,7 +410,7 @@ def generate_module_files(rel_mod_dir, update_flag):
         'abbr': 'module.cpp',
         'path': mod_cpp_file,
         'content': templates['module.cpp'].render(tmpl_data),
-        'template_mtime': Path(templates['module.cpp'].filename).stat().st_mtime,
+        'template_path': Path(templates['module.cpp'].filename),
         'last_mtime': mod_path.stat().st_mtime
     })
 
@@ -419,7 +419,7 @@ def generate_module_files(rel_mod_dir, update_flag):
         'abbr': 'doc.rst',
         'path': output_path / 'doc.rst',
         'content': templates['doc.rst'].render(tmpl_data),
-        'template_mtime': Path(templates['doc.rst'].filename).stat().st_mtime,
+        'template_path': Path(templates['doc.rst'].filename),
         'last_mtime': mod_path.stat().st_mtime
     })
 
@@ -428,7 +428,7 @@ def generate_module_files(rel_mod_dir, update_flag):
         'abbr': 'index.rst',
         'path': output_path / 'docs' / 'index.rst',
         'content': templates['index.rst'].render(tmpl_data),
-        'template_mtime': Path(templates['index.rst'].filename).stat().st_mtime,
+        'template_path': Path(templates['index.rst'].filename),
         'last_mtime': mod_path.stat().st_mtime
     })
 
@@ -483,7 +483,7 @@ def generate_interface_headers(interface, all_interfaces_flag, output_dir):
     if_parts['base'] = {
         'path': base_file,
         'content': templates['interface_base'].render(tmpl_data),
-        'template_mtime': Path(templates['interface_base'].filename).stat().st_mtime,
+        'template_path': Path(templates['interface_base'].filename),
         'last_mtime': last_mtime,
         'printable_name': base_file.relative_to(output_path.parent)
     }
@@ -497,7 +497,7 @@ def generate_interface_headers(interface, all_interfaces_flag, output_dir):
     if_parts['exports'] = {
         'path': exports_file,
         'content': templates['interface_exports'].render(tmpl_data),
-        'template_mtime': Path(templates['interface_exports'].filename).stat().st_mtime,
+        'template_path': Path(templates['interface_exports'].filename),
         'last_mtime': last_mtime,
         'printable_name': exports_file.relative_to(output_path.parent)
     }
@@ -510,7 +510,7 @@ def generate_interface_headers(interface, all_interfaces_flag, output_dir):
     if_parts['types'] = {
         'path': types_file,
         'content': templates['types.hpp'].render(tmpl_data),
-        'template_mtime': Path(templates['types.hpp'].filename).stat().st_mtime,
+        'template_path': Path(templates['types.hpp'].filename),
         'last_mtime': last_mtime,
         'printable_name': types_file.relative_to(output_path.parent)
     }
@@ -774,11 +774,6 @@ def main():
                                   'files (default: {everest-dir}/build/generated/generated/modules)')
     mod_genld_parser.set_defaults(action_handler=module_genld)
 
-    mod_get_templates_parser = mod_actions.add_parser(
-        'get-templates', aliases=['gt'], parents=[common_parser], help='get paths to template files')
-    mod_get_templates_parser.add_argument('-s', '--separator', type=str, default='\n', help='separator between interface files (default: ;)')
-    mod_get_templates_parser.set_defaults(action_handler=module_get_templates)
-
     if_actions = parser_if.add_subparsers(metavar='<action>', help='available actions', required=True)
     if_genhdr_parser = if_actions.add_parser(
         'generate-headers', aliases=['gh'], parents=[common_parser], help='generate headers')
@@ -790,11 +785,6 @@ def main():
                                   'be generated - if no interface is given, all will be processed and non-processable '
                                   'will be skipped')
     if_genhdr_parser.set_defaults(action_handler=interface_genhdr)
-
-    if_get_templates_parser = if_actions.add_parser(
-        'get-templates', aliases=['gt'], parents=[common_parser], help='get paths to template files')
-    if_get_templates_parser.add_argument('-s', '--separator', type=str, default=';', help='separator between interface files (default: ;)')
-    if_get_templates_parser.set_defaults(action_handler=interface_get_templates)
 
     hlp_actions = parser_hlp.add_subparsers(metavar='<action>', help='available actions', required=True)
     hlp_genuuid_parser = hlp_actions.add_parser('generate-uuids', help='generete uuids')
@@ -823,11 +813,16 @@ def main():
                                      'will be skipped')
     types_genhdr_parser.set_defaults(action_handler=types_genhdr)
 
-    types_get_templates_parser = types_actions.add_parser(
-        'get-templates', aliases=['gt'], parents=[common_parser], help='get paths to template files')
-    types_get_templates_parser.add_argument('-s', '--separator', type=str, default=';', help='separator between interface files (default: ;)')
-    types_get_templates_parser.set_defaults(action_handler=types_get_templates)
-
+    for sub_parser, get_template_function in [
+        (mod_actions, module_get_templates),
+        (if_actions, interface_get_templates),
+        (types_actions, types_get_templates)
+    ]:
+        get_templates_parser = sub_parser.add_parser(
+            'get-templates', aliases=['gt'], parents=[common_parser], help='get paths to template files')
+        get_templates_parser.add_argument(
+            '-s', '--separator', type=str, default='\n', help='separator between template files')
+        get_templates_parser.set_defaults(action_handler=get_template_function)
 
     args = parser.parse_args()
 

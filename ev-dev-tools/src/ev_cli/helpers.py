@@ -668,12 +668,23 @@ def print_available_mod_files(mod_files):
         for file_info in category_files:
             print(f'  {file_info["abbr"]}')
 
+def get_mtime(filename: str | Path) -> float:
+    if isinstance(filename, str):
+        filename = Path(filename)
+
+    return filename.stat().st_mtime
+
 
 def is_template_newer(file_info) -> Tuple[bool, str]:
-    if not file_info['path'].exists():
+    template_path = file_info['template_path']
+    generated_path = file_info['path']
+
+    if not generated_path.exists():
         return (True, f' (Generated file did not exist)')
-    if file_info['template_mtime'] > file_info['path'].stat().st_mtime:
+
+    if get_mtime(template_path) > get_mtime(generated_path):
         return (True, f' (Template file has changed since last generation)')
+
     return (False, '')
 
 
