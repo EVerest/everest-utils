@@ -111,7 +111,7 @@ std::vector<Everest::cmd> everest_register(const std::map<std::string, std::vect
     std::string r_{{ requirement.id }}_requirement_module_id;
     Requirement r_{{ requirement.id }}_requirement;
     if (fulfillments.find("{{ requirement.id }}") != fulfillments.end()) {
-        auto requirement_connection = fulfillments.at("{{ requirement.id }}");
+        auto fulfillment = fulfillments.at("{{ requirement.id }}");
         if (fulfillment.size() > 0) {
             r_{{ requirement.id }}_requirement_module_id = fulfillment.at(0).requirement_module_id;
             r_{{ requirement.id }}_requirement = fulfillment.at(0).requirement;
