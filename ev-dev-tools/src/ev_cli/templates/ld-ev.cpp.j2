@@ -102,7 +102,7 @@ std::vector<Everest::cmd> everest_register(const std::map<std::string, std::vect
     if (fulfillments.find("{{ requirement.id }}") != fulfillments.end()) {
         auto fulfillment = fulfillments.at("{{ requirement.id }}");
         for (size_t idx = 0; idx < fulfillment.size(); idx++) {
-            auto requirement_module_id = fulfillment.at(idx).requirement_module_id;
+            auto requirement_module_id = fulfillment.at(idx).module_id;
             auto requirement = fulfillment.at(idx).requirement;
             r_{{ requirement.id }}.emplace_back(std::make_unique<{{ requirement.class_name }}>(&adapter, requirement, requirement_module_id));
         }
@@ -113,7 +113,7 @@ std::vector<Everest::cmd> everest_register(const std::map<std::string, std::vect
     if (fulfillments.find("{{ requirement.id }}") != fulfillments.end()) {
         auto fulfillment = fulfillments.at("{{ requirement.id }}");
         if (fulfillment.size() > 0) {
-            r_{{ requirement.id }}_requirement_module_id = fulfillment.at(0).requirement_module_id;
+            r_{{ requirement.id }}_requirement_module_id = fulfillment.at(0).module_id;
             r_{{ requirement.id }}_requirement = fulfillment.at(0).requirement;
         }
     }
