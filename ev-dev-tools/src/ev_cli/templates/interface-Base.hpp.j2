@@ -39,7 +39,7 @@ public:
             if (error_factory == nullptr) {
                 EVLOG_error << "error_factory is nullptr";
             }
-            impl_mapping = ev->get_impl_mapping(name);
+            impl_mapping = Everest::get_impl_mapping(ev->get_mapping(), name);
         }
     }
 

@@ -104,20 +104,23 @@ std::vector<Everest::cmd> everest_register(const std::map<std::string, std::vect
         for (size_t idx = 0; idx < fulfillment.size(); idx++) {
             auto requirement_module_id = fulfillment.at(idx).module_id;
             auto requirement = fulfillment.at(idx).requirement;
-            r_{{ requirement.id }}.emplace_back(std::make_unique<{{ requirement.class_name }}>(&adapter, requirement, requirement_module_id));
+            auto mapping = fulfillment.at(idx).mapping;
+            r_{{ requirement.id }}.emplace_back(std::make_unique<{{ requirement.class_name }}>(&adapter, requirement, requirement_module_id, mapping));
         }
     }
     {% else %}
     std::string r_{{ requirement.id }}_requirement_module_id;
     Requirement r_{{ requirement.id }}_requirement;
+    std::optional<Mapping> r_{{ requirement.id }}_mapping;
     if (fulfillments.find("{{ requirement.id }}") != fulfillments.end()) {
         auto fulfillment = fulfillments.at("{{ requirement.id }}");
         if (fulfillment.size() > 0) {
             r_{{ requirement.id }}_requirement_module_id = fulfillment.at(0).module_id;
             r_{{ requirement.id }}_requirement = fulfillment.at(0).requirement;
+            r_{{ requirement.id }}_mapping = fulfillment.at(0).mapping;
         }
     }
-    auto r_{{ requirement.id }} = std::make_unique<{{ requirement.class_name }}>(&adapter, r_{{ requirement.id }}_requirement, r_{{ requirement.id }}_requirement_module_id);
+    auto r_{{ requirement.id }} = std::make_unique<{{ requirement.class_name }}>(&adapter, r_{{ requirement.id }}_requirement, r_{{ requirement.id }}_requirement_module_id, r_{{ requirement.id }}_mapping);
     {% endif %}
     {% else %}
         (void) fulfillments; // no requirements -> unused fulfillments
