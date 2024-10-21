@@ -85,7 +85,7 @@ void register_module_adapter(Everest::ModuleAdapter module_adapter) {
     adapter = std::move(module_adapter);
 }
 
-std::vector<Everest::cmd> everest_register(const std::map<std::string, std::vector<Fulfillment>>& fulfillments) {
+std::vector<Everest::cmd> everest_register(const RequirementInitialization& requirement_init) {
     EVLOG_debug << "everest_register() called on module {{ info.name }}";
 
     adapter.check_complete();
@@ -99,12 +99,12 @@ std::vector<Everest::cmd> everest_register(const std::map<std::string, std::vect
     {# FIXME: needs refactoring #}
     {% if requirement.is_vector %}
     auto r_{{ requirement.id }} = std::vector<std::unique_ptr<{{ requirement.class_name }}>>();
-    if (fulfillments.find("{{ requirement.id }}") != fulfillments.end()) {
-        auto fulfillment = fulfillments.at("{{ requirement.id }}");
-        for (size_t idx = 0; idx < fulfillment.size(); idx++) {
-            auto requirement_module_id = fulfillment.at(idx).module_id;
-            auto requirement = fulfillment.at(idx).requirement;
-            auto mapping = fulfillment.at(idx).mapping;
+    if (requirement_init.find("{{ requirement.id }}") != requirement_init.end()) {
+        auto requirement_initializer = requirement_init.at("{{ requirement.id }}");
+        for (size_t idx = 0; idx < requirement_initializer.size(); idx++) {
+            auto requirement_module_id = requirement_initializer.at(idx).fulfillment.module_id;
+            auto requirement = requirement_initializer.at(idx).requirement;
+            auto mapping = requirement_initializer.at(idx).mapping;
             r_{{ requirement.id }}.emplace_back(std::make_unique<{{ requirement.class_name }}>(&adapter, requirement, requirement_module_id, mapping));
         }
     }
@@ -112,18 +112,18 @@ std::vector<Everest::cmd> everest_register(const std::map<std::string, std::vect
     std::string r_{{ requirement.id }}_requirement_module_id;
     Requirement r_{{ requirement.id }}_requirement;
     std::optional<Mapping> r_{{ requirement.id }}_mapping;
-    if (fulfillments.find("{{ requirement.id }}") != fulfillments.end()) {
-        auto fulfillment = fulfillments.at("{{ requirement.id }}");
-        if (fulfillment.size() > 0) {
-            r_{{ requirement.id }}_requirement_module_id = fulfillment.at(0).module_id;
-            r_{{ requirement.id }}_requirement = fulfillment.at(0).requirement;
-            r_{{ requirement.id }}_mapping = fulfillment.at(0).mapping;
+    if (requirement_init.find("{{ requirement.id }}") != requirement_init.end()) {
+        auto requirement_initializer = requirement_init.at("{{ requirement.id }}");
+        if (requirement_initializer.size() > 0) {
+            r_{{ requirement.id }}_requirement_module_id = requirement_initializer.at(0).fulfillment.module_id;
+            r_{{ requirement.id }}_requirement = requirement_initializer.at(0).requirement;
+            r_{{ requirement.id }}_mapping = requirement_initializer.at(0).mapping;
         }
     }
     auto r_{{ requirement.id }} = std::make_unique<{{ requirement.class_name }}>(&adapter, r_{{ requirement.id }}_requirement, r_{{ requirement.id }}_requirement_module_id, r_{{ requirement.id }}_mapping);
     {% endif %}
     {% else %}
-        (void) fulfillments; // no requirements -> unused fulfillments
+        (void) requirement_init; // no requirements -> unused requirement initialization
     {% endfor %}
 
     {% if info.enable_external_mqtt %}

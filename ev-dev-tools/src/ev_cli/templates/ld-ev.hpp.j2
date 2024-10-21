@@ -20,7 +20,7 @@ struct LdEverest {
 
 void register_module_adapter(Everest::ModuleAdapter module_adapter);
 
-std::vector<Everest::cmd> everest_register(const std::map<std::string, std::vector<Fulfillment>>& fulfillments);
+std::vector<Everest::cmd> everest_register(const RequirementInitialization& requirement_init);
 
 {% if info.enable_global_errors %}
 void subscribe_global_all_errors(
