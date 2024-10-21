@@ -99,12 +99,11 @@ std::vector<Everest::cmd> everest_register(const RequirementInitialization& requ
     {# FIXME: needs refactoring #}
     {% if requirement.is_vector %}
     auto r_{{ requirement.id }} = std::vector<std::unique_ptr<{{ requirement.class_name }}>>();
-    if (requirement_init.find("{{ requirement.id }}") != requirement_init.end()) {
-        auto requirement_initializer = requirement_init.at("{{ requirement.id }}");
-        for (size_t idx = 0; idx < requirement_initializer.size(); idx++) {
-            auto requirement_module_id = requirement_initializer.at(idx).fulfillment.module_id;
-            auto requirement = requirement_initializer.at(idx).requirement;
-            auto mapping = requirement_initializer.at(idx).mapping;
+    if (auto it = requirement_init.find("{{ requirement.id }}"); it != requirement_init.end()) {
+        for (const auto& requirement_initializer : (*it).second) {
+            auto requirement_module_id = requirement_initializer.fulfillment.module_id;
+            auto requirement = requirement_initializer.requirement;
+            auto mapping = requirement_initializer.mapping;
             r_{{ requirement.id }}.emplace_back(std::make_unique<{{ requirement.class_name }}>(&adapter, requirement, requirement_module_id, mapping));
         }
     }
@@ -112,8 +111,8 @@ std::vector<Everest::cmd> everest_register(const RequirementInitialization& requ
     std::string r_{{ requirement.id }}_requirement_module_id;
     Requirement r_{{ requirement.id }}_requirement;
     std::optional<Mapping> r_{{ requirement.id }}_mapping;
-    if (requirement_init.find("{{ requirement.id }}") != requirement_init.end()) {
-        auto requirement_initializer = requirement_init.at("{{ requirement.id }}");
+    if (auto it = requirement_init.find("{{ requirement.id }}"); it != requirement_init.end()) {
+        auto requirement_initializer = (*it).second;
         if (requirement_initializer.size() > 0) {
             r_{{ requirement.id }}_requirement_module_id = requirement_initializer.at(0).fulfillment.module_id;
             r_{{ requirement.id }}_requirement = requirement_initializer.at(0).requirement;
