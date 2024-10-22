@@ -1,5 +1,3 @@
-version: "3.6"
-
 volumes:
   ocpp-db-data:
     external: false
@@ -18,7 +16,7 @@ services:
       - 1883:1883
       - 9001:9001
     volumes:
-      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:z
 
   ocpp-db:
     image: mariadb:10.4.30 # pinned to patch-version because https://github.com/steve-community/steve/pull/1213
@@ -47,4 +45,4 @@ services:
     depends_on:
       - mqtt-server
     ports:
-      - 1880:1880 
+      - 1880:1880
