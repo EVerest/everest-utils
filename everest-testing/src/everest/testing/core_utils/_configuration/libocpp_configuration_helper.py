@@ -142,8 +142,8 @@ class LibOCPP201ConfigurationHelper(LibOCPPConfigurationHelperBase):
         file_list = file_list_standardized + file_list_custom
         for file in file_list:
             # Get component from file name
-            head, tail = os.path.split(file)
-            component_name, extension = os.path.splitext(tail)
+            _, tail = os.path.split(file)
+            component_name, _ = os.path.splitext(tail)
             # Store json in dict
             with open(file) as f:
                 config[component_name] = json.load(f)
