@@ -53,7 +53,7 @@ def ocpp_config(request, central_system: CentralSystem, test_config: OcppTestCon
         central_system_host="127.0.0.1",
         ocpp_version=ocpp_version,
         template_ocpp_config=Path(ocpp_config_marker.args[0]) if ocpp_config_marker else None,
-        device_model_component_config_path=Path(f"{request.config.getoption("--everest-prefix")}/share/everest/modules/OCPP201/component_config"),
+        device_model_component_config_path=Path(f"{request.config.getoption('--everest-prefix')}/share/everest/modules/OCPP201/component_config"),
         configuration_strategies=ocpp_configuration_strategies
     )
 
