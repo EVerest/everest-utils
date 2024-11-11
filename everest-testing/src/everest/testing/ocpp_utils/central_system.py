@@ -6,6 +6,7 @@ import asyncio
 import ssl
 import time
 import logging
+from abc import ABC, abstractmethod
 from contextlib import asynccontextmanager
 from functools import wraps
 from typing import Union, Optional
@@ -24,10 +25,8 @@ from everest.testing.ocpp_utils.charge_point_v201 import ChargePoint201
 
 logging.basicConfig(level=logging.debug)
 
-
 class CentralSystem:
-
-    """Wrapper for CSMS websocket server. Holds a reference to a single connected chargepoint
+    """Base central system used for tests to connect
     """
 
     def __init__(self,  chargepoint_id, ocpp_version, port: Optional[int] = None):
@@ -39,6 +38,31 @@ class CentralSystem:
         self.chargepoint = None
         self.chargepoint_set_event = asyncio.Event()
         self.function_overrides = []
+    
+    @abstractmethod
+    async def on_connect(self, websocket, path):
+        logging.error("'CentralSystem' did not implement 'on_connect'!")
+        pass
+
+    @abstractmethod
+    async def wait_for_chargepoint(self, timeout=30, wait_for_bootnotification=True):
+        logging.error("'CentralSystem' did not implement 'wait_for_chargepoint'!")
+        return None
+
+    @abstractmethod
+    async def start(self, ssl_context=None):
+        logging.error("'CentralSystem' did not implement 'start'!")
+        pass
+
+    pass # End CentralSystem
+
+class LocalCentralSystem(CentralSystem):        
+    """Wrapper for CSMS websocket server. Holds a reference to a single connected chargepoint
+    """
+
+    def __init__(self,  chargepoint_id, ocpp_version, port: Optional[int] = None):        
+        super().__init__(chargepoint_id, ocpp_version, port)
+        self.name = "LocalCentralSystem"        
 
     async def on_connect(self, websocket, path):
         """ For every new charge point that connects, create a ChargePoint
@@ -136,7 +160,7 @@ class CentralSystem:
 
         self.ws_server.close()
         await self.ws_server.wait_closed()
-
+    pass # End LocalCentralSystem
 
 
 
