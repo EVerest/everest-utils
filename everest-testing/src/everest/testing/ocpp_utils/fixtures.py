@@ -69,7 +69,7 @@ async def central_system(request, ocpp_version: OCPPVersion, test_config):
     central_system_marker = request.node.get_closest_marker('custom_central_system')
 
     if central_system_marker:
-        assert isinstance(central_system_marker.args[0], CentralSystem)        
+        assert isinstance(central_system_marker.args[0], CentralSystem)
         cs = central_system_marker.args[0]
     else:
         cs = LocalCentralSystem(test_config.charge_point_info.charge_point_id,
