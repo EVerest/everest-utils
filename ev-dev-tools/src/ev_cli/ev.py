@@ -854,6 +854,9 @@ def main():
             print(f'Searching for everest-framework in: {cmake_cache_path}')
             print('You can either provide the schemas directory with --schemas-dir or influence the'
                   ' automatic search path by setting --build-dir (default: ./build)')
+            if not cmake_cache_path.exists():
+                print(f'CMakeCache.txt does not exist: {cmake_cache_path}')
+                exit(1)
             with open(cmake_cache_path, 'r') as cmake_cache_file:
                 search = 'everest-framework_SOURCE_DIR:STATIC='
                 for line in cmake_cache_file:
