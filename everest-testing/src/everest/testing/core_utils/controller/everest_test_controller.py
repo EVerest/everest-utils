@@ -54,7 +54,7 @@ class EverestTestController(TestController):
         self._mqtt_client.publish(
             f"{self._mqtt_external_prefix}everest_external/nodered/{connector_id}/carsim/cmd/modify_charging_session",
             "unplug")
-        
+
     def plug_out_iso(self, connector_id=1):
         self._mqtt_client.publish(
             f"{self._mqtt_external_prefix}everest_external/nodered/{connector_id}/carsim/cmd/modify_charging_session",
