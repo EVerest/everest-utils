@@ -264,8 +264,9 @@ def generate_module_files(rel_mod_dir, update_flag, licenses):
     mod_def = helpers.load_validated_module_def(mod_path, validators['module'])
 
     default_license_dir = Path(__file__).parent / 'licenses'
+    current_license_dir = work_dir / 'licenses'
     additional_license_dir = Path(licenses)
-    license_dirs = [default_license_dir, additional_license_dir]
+    license_dirs = [default_license_dir, current_license_dir, additional_license_dir]
     license_url = mod_def['metadata']['license']
     license_header = helpers.get_license_header(license_dirs, license_url)
 
