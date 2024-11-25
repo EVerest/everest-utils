@@ -884,23 +884,10 @@ def main():
                   ' doesn\'t exist.\n'
                   f'dir: {schemas_dir}')
             cmake_cache_path = Path(args.build_dir) / 'CMakeCache.txt'
-            print(f'Searching for everest-framework in: {cmake_cache_path}')
-            print('You can either provide the schemas directory with --schemas-dir or influence the'
-                  ' automatic search path by setting --build-dir (default: ./build)')
-            if not cmake_cache_path.exists():
-                print(f'CMakeCache.txt does not exist: {cmake_cache_path}')
+            found_dir = helpers.get_path_from_cmake_cache('everest-framework', cmake_cache_path, '--schemas-dir')
+            if not found_dir:
                 exit(1)
-            with open(cmake_cache_path, 'r') as cmake_cache_file:
-                search = 'everest-framework_SOURCE_DIR:STATIC='
-                for line in cmake_cache_file:
-                    if line.startswith(search):
-                        found_schemas_dir = Path(line.replace(search, '', 1).strip(' \t\n\r')) / 'schemas'
-                        if found_schemas_dir.exists():
-                            print(f'Found everest-framework schemas directory: {found_schemas_dir}')
-                            user_choice = input('Do you want to use this? [Y/n] ').lower()
-                            if user_choice == 'y' or not user_choice:
-                                schemas_dir = found_schemas_dir
-                        break
+            schemas_dir = found_dir / 'schemas'
             if not schemas_dir.exists():
                 exit(1)
 
