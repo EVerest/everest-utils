@@ -539,6 +539,10 @@ def generate_interface_headers(interface, all_interfaces_flag, output_dir):
 def module_create(args):
     create_strategy = 'force-create' if args.force else 'create'
 
+    detected_projects = helpers.detect_everest_projects(args.everest_projects, args.build_dir)
+    if detected_projects:
+        helpers.everest_dirs.extend(detected_projects)
+
     mod_files = generate_module_files(args.module, False, args.licenses)
 
     if args.only == 'which':
@@ -559,6 +563,10 @@ def module_create(args):
 
 
 def module_update(args):
+    detected_projects = helpers.detect_everest_projects(args.everest_projects, args.build_dir)
+    if detected_projects:
+        helpers.everest_dirs.extend(detected_projects)
+
     # Always generate type info before updating module
     for type_with_namespace in list_types_with_namespace():
         _tmpl_data, _last_mtime = TypeParser.generate_type_info(type_with_namespace, all_types=True)
@@ -748,7 +756,11 @@ def main():
     common_parser.add_argument('--work-dir', '-wd', type=str,
                                help='work directory containing the manifest definitions (default: .)', default=str(Path.cwd()))
     common_parser.add_argument('--everest-dir', '-ed', nargs='*',
-                               help='everest directory containing the interface definitions (default: .)', default=[str(Path.cwd())])
+                               help='everest directory containing the interface definitions (default: .)',
+                               default=[str(Path.cwd()), str(Path.cwd() / '../everest-core')])
+    common_parser.add_argument('--everest-projects', '-ep', nargs='*',
+                               help='everest project names. used in auto detection of their directories to get eg. interface defintions (default: everest-core)',
+                               default=['everest-core'])
     common_parser.add_argument('--schemas-dir', '-sd', type=str,
                                help='everest framework directory containing the schema definitions (default: ../everest-framework/schemas)',
                                default=str(Path.cwd() / '../everest-framework/schemas'))
