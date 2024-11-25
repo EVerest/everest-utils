@@ -33,11 +33,7 @@ class CentralSystem:
         self.name = "CentralSystem"
         self.port = port
         self.chargepoint_id = chargepoint_id
-        self.ocpp_version = ocpp_version
-        self.ws_server = None
-        self.chargepoint = None
-        self.chargepoint_set_event = asyncio.Event()
-        self.function_overrides = []
+        self.ocpp_version = ocpp_version        
     
     @abstractmethod
     async def on_connect(self, websocket, path):
@@ -52,8 +48,6 @@ class CentralSystem:
     async def start(self, ssl_context=None):
         logging.error("'CentralSystem' did not implement 'start'!")        
 
-    pass # End CentralSystem
-
 class LocalCentralSystem(CentralSystem):
     """Wrapper for CSMS websocket server. Holds a reference to a single connected chargepoint
     """
@@ -61,6 +55,10 @@ class LocalCentralSystem(CentralSystem):
     def __init__(self,  chargepoint_id, ocpp_version, port: Optional[int] = None):        
         super().__init__(chargepoint_id, ocpp_version, port)
         self.name = "LocalCentralSystem"
+        self.ws_server = None
+        self.chargepoint = None
+        self.chargepoint_set_event = asyncio.Event()
+        self.function_overrides = []
 
     async def on_connect(self, websocket, path):
         """ For every new charge point that connects, create a ChargePoint
@@ -158,9 +156,6 @@ class LocalCentralSystem(CentralSystem):
 
         self.ws_server.close()
         await self.ws_server.wait_closed()
-    pass # End LocalCentralSystem
-
-
 
 
 def inject_csms_v201_mock(cs: CentralSystem) -> Mock:
