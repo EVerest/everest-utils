@@ -93,6 +93,11 @@ class GenericOCPP201ConfigAdjustment(OCPPConfigAdjustmentStrategy):
 
 class _OCPP201NetworkConnectionProfileAdjustment(OCPPConfigAdjustmentStrategy):
     """ Adjusts the OCPP 2.0.1 Network Connection Profile by injecting the right host, port and chargepoint id.
+        
+    Usage in conjunction with other strategies:
+    @pytest.mark.ocpp_config_adaptions(GenericOCPP201ConfigAdjustment([(OCPP201ConfigVariableIdentifier("OCPPCommCtrlr", "VariableA", "Actual"), 10),
+                                                                       (OCPP201ConfigVariableIdentifier("OCPPCommCtrlr", "VariableB", "Actual"), 10)]),
+                                   _OCPP201NetworkConnectionProfileAdjustment(80, "localhost", 1))
 
     This is utilized by the `LibOCPP201ConfigurationHelper`.
 
