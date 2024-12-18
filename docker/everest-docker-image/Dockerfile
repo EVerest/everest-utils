@@ -6,6 +6,7 @@ ARG BRANCH
 ARG EVEREST_CONFIG
 ARG OCPP_CONFIG
 ARG ADDITIONAL_CMAKE_PARAMETERS
+ARG EV_CLI_VERSION
 
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
@@ -49,7 +50,7 @@ ENV EVEREST_VENV=/workspace/everest/venv
 RUN python3 -m venv ${EVEREST_VENV}
 ENV PATH="${EVEREST_VENV}/bin:${PATH}"
 RUN git clone https://github.com/EVerest/everest-cmake.git
-RUN git clone https://github.com/EVerest/everest-utils.git
+RUN git clone https://github.com/EVerest/everest-utils.git -b ${EV_CLI_VERSION}
 WORKDIR /workspace/everest/everest-utils/ev-dev-tools
 RUN python3 -m pip install .
 WORKDIR /workspace/everest
