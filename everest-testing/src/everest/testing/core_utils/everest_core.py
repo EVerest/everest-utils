@@ -255,7 +255,7 @@ class EverestCore:
     def get_runtime_session(self):
         try:
             mqtt_settings = MQTTSettings()
-            mqtt_settings.broker_host = 'localhost'
+            mqtt_settings.broker_host = os.getenv('MQTT_SERVER_ADDRESS', 'localhost')
             mqtt_settings.broker_port = 1883
             mqtt_settings.everest_prefix = f"everest_{self.everest_uuid}/"
             mqtt_settings.external_prefix = f"{self.mqtt_external_prefix}/"
