@@ -55,6 +55,11 @@ class EverestTestController(TestController):
             f"{self._mqtt_external_prefix}everest_external/nodered/{connector_id}/carsim/cmd/modify_charging_session",
             "unplug")
 
+    def plug_out_iso(self, connector_id=1):
+        self._mqtt_client.publish(
+            f"{self._mqtt_external_prefix}everest_external/nodered/{connector_id}/carsim/cmd/modify_charging_session",
+            "iso_stop_charging;iso_wait_v2g_session_stopped;unplug")
+
     def swipe(self, token, connectors=None):
         connectors = connectors if connectors is not None else [1]
         provided_token = {
@@ -80,6 +85,26 @@ class EverestTestController(TestController):
         self._mqtt_client.publish(
             f"{self._mqtt_external_prefix}everest_external/nodered/{connector_id}/carsim/cmd/execute_charging_session",
             "sleep 1;iec_wait_pwr_ready;sleep 1;draw_power_regulated 32,3;sleep 5;diode_fail;sleep 36000;unplug")
+
+    def raise_error(self, error_string="MREC6UnderVoltage", connector_id=1):
+        raise_error_payload = {
+            "error_type": error_string,
+            "raise": "true"
+        }
+
+        self._mqtt_client.publish(
+            f"{self._mqtt_external_prefix}everest_external/nodered/{connector_id}/carsim/error",
+            json.dumps(raise_error_payload))
+
+    def clear_error(self, error_string="MREC6UnderVoltage", connector_id=1):
+        clear_error_payload = {
+            "error_type": error_string,
+            "raise": "false"
+        }
+
+        self._mqtt_client.publish(
+            f"{self._mqtt_external_prefix}everest_external/nodered/{connector_id}/carsim/error",
+            json.dumps(clear_error_payload))
 
     def publish(self, topic, payload):
         self._mqtt_client.publish(topic, payload)

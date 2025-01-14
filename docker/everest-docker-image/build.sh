@@ -7,8 +7,20 @@ usage() {
     echo -e "\t--conf: Path to EVerest config file - Required"
     echo -e "\t--ocpp-conf: Path to EVerest OCPP config file - Optional, no default"
     echo -e "\t--name: Name of the docker image - Optional, defaults to: everest-core"
+    echo -e "\t--build-date: Build date of the docker image, is reflected in its name and can have an effect on caching - Optional, defaults to the current datetime"
+    echo -e "\t--no-ssh: Do not append \"--ssh default\" to docker build - Optional"
+    echo -e "\t--container-runtime: Set container runtime (e.g. docker or podman) for build - Optional"
+    echo -e "\t--additional-cmake-parameters: Set additional cmake parameters for build - Optional, default \"-DEVEREST_BUILD_ALL_MODULES=ON\""
+    echo -e "\t--ev-cli-version: Version of ev-cli to use - Optional, defaults to: main"
+    echo -e "\t--no-ev-cli: Do not install specific ev-cli version, since EVerest 2024.9 this can be done automatically - Optional"
     exit 1
 }
+
+ssh_param="--ssh=default"
+container_runtime="docker"
+additional_cmake_parameters="-DEVEREST_BUILD_ALL_MODULES=ON"
+ev_cli_version="main"
+install_ev_cli="install_ev_cli"
 
 while [ ! -z "$1" ]; do
     if [ "$1" == "--repo" ]; then
@@ -26,6 +38,24 @@ while [ ! -z "$1" ]; do
     elif [ "$1" == "--branch" ]; then
         branch="${2}"
         shift 2
+    elif [ "$1" == "--build-date" ]; then
+        build_date="${2}"
+        shift 2
+    elif [ "$1" == "--no-ssh" ]; then
+        ssh_param=""
+        shift 1
+    elif [ "$1" == "--container-runtime" ]; then
+        container_runtime="${2}"
+        shift 2
+    elif [ "$1" == "--additional-cmake-parameters" ]; then
+        additional_cmake_parameters="${2}"
+        shift 2
+    elif [ "$1" == "--ev-cli-version" ]; then
+        ev_cli_version="${2}"
+        shift 2
+    elif [ "$1" == "--no-ev-cli" ]; then
+        install_ev_cli="do_not_install_ev_cli"
+        shift 1
     else
         usage
         break
@@ -60,13 +90,25 @@ if [ -z "${branch}" ]; then
     branch="main"
 fi
 
-
 NOW=$(date +"%Y-%m-%d-%H-%M-%S")
-DOCKER_BUILDKIT=1 docker build \
+
+if [ -n "${build_date}" ]; then
+    NOW="${build_date}"
+fi
+
+echo "Build date: ${NOW}"
+echo "Using container runtime \"${container_runtime}\" for building. Version: $(${container_runtime} --version)"
+echo "Additional CMake parameters for EVerest build: \"${additional_cmake_parameters}\""
+echo "ev-cli version: \"${ev_cli_version}\""
+trap 'echo "Build not successful"; exit 1' ERR
+DOCKER_BUILDKIT=1 ${container_runtime} build \
     --build-arg BUILD_DATE="${NOW}" \
     --build-arg REPO="${repo}" \
     --build-arg EVEREST_CONFIG="${conf}" \
     --build-arg OCPP_CONFIG="${ocpp_conf}" \
     --build-arg BRANCH="${branch}" \
-    -t "${name}" --ssh default .
-docker save "${name}":latest | gzip >"$name-${NOW}.tar.gz"
+    --build-arg ADDITIONAL_CMAKE_PARAMETERS="${additional_cmake_parameters}" \
+    --build-arg EV_CLI_VERSION="${ev_cli_version}" \
+    --build-arg INSTALL_EV_CLI="${install_ev_cli}" \
+    -t "${name}" "${ssh_param}" .
+${container_runtime} save "${name}":latest | gzip >"$name-${NOW}.tar.gz"

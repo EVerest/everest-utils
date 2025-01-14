@@ -97,7 +97,6 @@ cpp_type_map = {
     'object': 'Object',
 }
 
-
 def clang_format(config_file_path, file_info):
     # check if we handle cpp and hpp files
     if not file_info['path'].suffix in ('.hpp', '.cpp'):
@@ -669,8 +668,27 @@ def print_available_mod_files(mod_files):
         for file_info in category_files:
             print(f'  {file_info["abbr"]}')
 
+def get_mtime(filename: str | Path) -> float:
+    if isinstance(filename, str):
+        filename = Path(filename)
 
-def write_content_to_file(file_info, strategy, only_diff=False):
+    return filename.stat().st_mtime
+
+
+def is_template_newer(file_info) -> Tuple[bool, str]:
+    template_path = file_info['template_path']
+    generated_path = file_info['path']
+
+    if not generated_path.exists():
+        return (True, ' (Generated file did not exist)')
+
+    if get_mtime(template_path) > get_mtime(generated_path):
+        return (True, ' (Template file has changed since last generation)')
+
+    return (False, '')
+
+
+def write_content_to_file(file_info, strategy, only_diff=False, reason = '', check_license_header=False):
     # strategy:
     #   update: update only if dest older or not existent
     #   force-update: update, even if dest newer
@@ -707,9 +725,93 @@ def write_content_to_file(file_info, strategy, only_diff=False):
     else:
         raise Exception(f'Invalid strategy "{strategy}"\nSupported strategies: {strategies}')
 
-    print(f'{method} file {printable_name}')
+    print(f'{method} file {printable_name}{reason}')
 
     if not file_dir.exists():
         file_dir.mkdir(parents=True, exist_ok=True)
 
+    # check if file header is different from license header
+    if check_license_header:
+        if 'license_header' in file_info:
+            original_content = file_path.read_text()
+            if not original_content.startswith(file_info['license_header']):
+                # determine likely end of license header
+                search_terms = ['#ifndef', '#pragma once', '#include']
+                original_license_header = ''
+                for search in search_terms:
+                    index = original_content.find(search)
+                    if index >= 0:
+                        original_license_header = original_content[0:index]
+                        break
+                print(f'Keeping the existing licence header:\n{original_license_header}')
+                file_info['content'] = file_info['content'].replace(
+                    file_info['license_header'], original_license_header.strip())
+
     file_path.write_text(file_info['content'])
+
+
+def write_content_to_file_and_check_template(file_info, strategy, only_diff=False):
+    # check if template is newer and force-update file if it is
+    update_strategy = strategy
+    (newer, reason) = is_template_newer(file_info)
+    if newer:
+        update_strategy = 'force-update'
+    write_content_to_file(file_info, update_strategy, only_diff, reason)
+
+
+def get_license_header(license_dirs, license_url):
+    url_schemas = ['http://', 'https://']
+    for url_schema in url_schemas:
+        if license_url.startswith(url_schema):
+            license_url = license_url.replace(url_schema, '', 1)
+    license_path = None
+    for license_dir in license_dirs:
+        check_license_path = license_dir / license_url
+        print(f'Checking if license "{check_license_path}" exists...')
+        if check_license_path.exists():
+            license_path = check_license_path
+
+    if not license_path:
+        return None
+    with open(license_path, 'r') as custom_license_file:
+        return custom_license_file.read().strip()
+
+
+def get_path_from_cmake_cache(variable_prefix, cmake_cache_path, option_name):
+    print(f'Searching for {variable_prefix} in: {cmake_cache_path}')
+    print(f'You can either provide the {variable_prefix} directory with {option_name} or influence the'
+            ' automatic search path by setting --build-dir (default: ./build)')
+    if not cmake_cache_path.exists():
+        print(f'CMakeCache.txt does not exist: {cmake_cache_path}')
+        return None
+    with open(cmake_cache_path, 'r') as cmake_cache_file:
+        search = f'{variable_prefix}_SOURCE_DIR:STATIC='
+        for line in cmake_cache_file:
+            if line.startswith(search):
+                found_dir = Path(line.replace(search, '', 1).strip(' \t\n\r'))
+                if found_dir.exists():
+                    print(f'Found {variable_prefix} directory: {found_dir}')
+                    user_choice = input('Do you want to use this? [Y/n] ').lower()
+                    if user_choice == 'y' or not user_choice:
+                        return found_dir
+                break
+    return None
+
+
+def detect_everest_projects(everest_projects, build_dir):
+    detected_everest_project = False
+    for everest_dir in everest_dirs:
+        if everest_dir.exists() and everest_dir.name in everest_projects:
+            detected_everest_project = True
+
+    found_dirs = []
+
+    if not detected_everest_project:
+        print('Could not detect ' + ", ".join(everest_projects) + ' path in --everest-dir')
+        cmake_cache_path = Path(build_dir) / 'CMakeCache.txt'
+        for everest_project in everest_projects:
+            found_dir = get_path_from_cmake_cache(everest_project, cmake_cache_path, '--everest-dir')
+            if found_dir:
+                found_dirs.append(found_dir)
+
+    return found_dirs

@@ -239,6 +239,7 @@ def generate_module_loader_files(rel_mod_dir, output_dir):
         'path': output_dir / mod / 'ld-ev.hpp',
         'printable_name': f'{mod}/ld-ev.hpp',
         'content': templates['ld-ev.hpp'].render(tmpl_data),
+        'template_path': Path(templates['ld-ev.hpp'].filename),
         'last_mtime': mod_path.stat().st_mtime
     })
 
@@ -248,18 +249,31 @@ def generate_module_loader_files(rel_mod_dir, output_dir):
         'path': output_dir / mod / 'ld-ev.cpp',
         'printable_name': f'{mod}/ld-ev.cpp',
         'content': templates['ld-ev.cpp'].render(tmpl_data),
+        'template_path': Path(templates['ld-ev.cpp'].filename),
         'last_mtime': mod_path.stat().st_mtime
     })
 
     return loader_files
 
 
-def generate_module_files(rel_mod_dir, update_flag):
+def generate_module_files(rel_mod_dir, update_flag, licenses):
     (_, _, mod) = rel_mod_dir.rpartition('/')
 
     mod_files = {'core': [], 'interfaces': [], 'docs': []}
     mod_path = work_dir / f'modules/{rel_mod_dir}/manifest.yaml'
     mod_def = helpers.load_validated_module_def(mod_path, validators['module'])
+
+    default_license_dir = Path(__file__).parent / 'licenses'
+    current_license_dir = work_dir / 'licenses'
+    additional_license_dir = Path(licenses)
+    license_dirs = [default_license_dir, current_license_dir, additional_license_dir]
+    license_url = mod_def['metadata']['license']
+    license_header = helpers.get_license_header(license_dirs, license_url)
+
+    if not license_header:
+        print(f'Could not find license "{license_url}" in {license_dirs}.')
+        print('Consider providing a additonal custom license directory with --licenses')
+        exit(1)
 
     tmpl_data = generate_tmpl_data_for_module(mod, mod_def)
     output_path = mod_path.parent
@@ -360,6 +374,7 @@ def generate_module_files(rel_mod_dir, update_flag):
 
         if_tmpl_data['info']['blocks'] = helpers.load_tmpl_blocks(
             impl_hpp_blocks, output_path / impl_hpp_file, update_flag)
+        if_tmpl_data['info']['license_header'] = license_header
 
         # FIXME (aw): time stamp should include parent interfaces modification dates
         mod_files['interfaces'].append({
@@ -367,7 +382,9 @@ def generate_module_files(rel_mod_dir, update_flag):
             'path': output_path / impl_hpp_file,
             'printable_name': impl_hpp_file,
             'content': templates['interface_impl.hpp'].render(if_tmpl_data),
-            'last_mtime': last_mtime
+            'template_path': Path(templates['interface_impl.hpp'].filename),
+            'last_mtime': last_mtime,
+            'license_header': license_header
         })
 
         mod_files['interfaces'].append({
@@ -375,15 +392,19 @@ def generate_module_files(rel_mod_dir, update_flag):
             'path': output_path / impl_cpp_file,
             'printable_name': impl_cpp_file,
             'content': templates['interface_impl.cpp'].render(if_tmpl_data),
-            'last_mtime': last_mtime
+            'template_path': Path(templates['interface_impl.cpp'].filename),
+            'last_mtime': last_mtime,
+            'license_header': license_header
         })
 
     cmakelists_file = output_path / 'CMakeLists.txt'
     tmpl_data['info']['blocks'] = helpers.load_tmpl_blocks(cmakelists_blocks, cmakelists_file, update_flag)
+    tmpl_data['info']['license_header'] = license_header
     mod_files['core'].append({
         'abbr': 'cmakelists',
         'path': cmakelists_file,
         'content': templates['cmakelists'].render(tmpl_data),
+        'template_path': Path(templates['cmakelists'].filename),
         'last_mtime': mod_path.stat().st_mtime
     })
 
@@ -395,7 +416,9 @@ def generate_module_files(rel_mod_dir, update_flag):
         'abbr': 'module.hpp',
         'path': mod_hpp_file,
         'content': templates['module.hpp'].render(tmpl_data),
-        'last_mtime': mod_path.stat().st_mtime
+        'template_path': Path(templates['module.hpp'].filename),
+        'last_mtime': mod_path.stat().st_mtime,
+        'license_header': license_header
     })
 
     # module.cpp
@@ -404,7 +427,9 @@ def generate_module_files(rel_mod_dir, update_flag):
         'abbr': 'module.cpp',
         'path': mod_cpp_file,
         'content': templates['module.cpp'].render(tmpl_data),
-        'last_mtime': mod_path.stat().st_mtime
+        'template_path': Path(templates['module.cpp'].filename),
+        'last_mtime': mod_path.stat().st_mtime,
+        'license_header': license_header
     })
 
     # doc.rst
@@ -412,6 +437,7 @@ def generate_module_files(rel_mod_dir, update_flag):
         'abbr': 'doc.rst',
         'path': output_path / 'doc.rst',
         'content': templates['doc.rst'].render(tmpl_data),
+        'template_path': Path(templates['doc.rst'].filename),
         'last_mtime': mod_path.stat().st_mtime
     })
 
@@ -420,6 +446,7 @@ def generate_module_files(rel_mod_dir, update_flag):
         'abbr': 'index.rst',
         'path': output_path / 'docs' / 'index.rst',
         'content': templates['index.rst'].render(tmpl_data),
+        'template_path': Path(templates['index.rst'].filename),
         'last_mtime': mod_path.stat().st_mtime
     })
 
@@ -474,6 +501,7 @@ def generate_interface_headers(interface, all_interfaces_flag, output_dir):
     if_parts['base'] = {
         'path': base_file,
         'content': templates['interface_base'].render(tmpl_data),
+        'template_path': Path(templates['interface_base'].filename),
         'last_mtime': last_mtime,
         'printable_name': base_file.relative_to(output_path.parent)
     }
@@ -487,6 +515,7 @@ def generate_interface_headers(interface, all_interfaces_flag, output_dir):
     if_parts['exports'] = {
         'path': exports_file,
         'content': templates['interface_exports'].render(tmpl_data),
+        'template_path': Path(templates['interface_exports'].filename),
         'last_mtime': last_mtime,
         'printable_name': exports_file.relative_to(output_path.parent)
     }
@@ -499,6 +528,7 @@ def generate_interface_headers(interface, all_interfaces_flag, output_dir):
     if_parts['types'] = {
         'path': types_file,
         'content': templates['types.hpp'].render(tmpl_data),
+        'template_path': Path(templates['types.hpp'].filename),
         'last_mtime': last_mtime,
         'printable_name': types_file.relative_to(output_path.parent)
     }
@@ -509,7 +539,11 @@ def generate_interface_headers(interface, all_interfaces_flag, output_dir):
 def module_create(args):
     create_strategy = 'force-create' if args.force else 'create'
 
-    mod_files = generate_module_files(args.module, False)
+    detected_projects = helpers.detect_everest_projects(args.everest_projects, args.build_dir)
+    if detected_projects:
+        helpers.everest_dirs.extend(detected_projects)
+
+    mod_files = generate_module_files(args.module, False, args.licenses)
 
     if args.only == 'which':
         helpers.print_available_mod_files(mod_files)
@@ -529,6 +563,10 @@ def module_create(args):
 
 
 def module_update(args):
+    detected_projects = helpers.detect_everest_projects(args.everest_projects, args.build_dir)
+    if detected_projects:
+        helpers.everest_dirs.extend(detected_projects)
+
     # Always generate type info before updating module
     for type_with_namespace in list_types_with_namespace():
         _tmpl_data, _last_mtime = TypeParser.generate_type_info(type_with_namespace, all_types=True)
@@ -539,7 +577,7 @@ def module_update(args):
         update_strategy[file_name] = primary_update_strategy
 
     # FIXME (aw): refactor out this only handling and rename it properly
-    mod_files = generate_module_files(args.module, True)
+    mod_files = generate_module_files(args.module, True, args.licenses)
 
     if args.only == 'which':
         helpers.print_available_mod_files(mod_files)
@@ -556,18 +594,19 @@ def module_update(args):
             helpers.clang_format(args.clang_format_file, file_info)
 
     for file_info in mod_files['core']:
-        helpers.write_content_to_file(file_info, update_strategy[file_info['abbr']], args.diff)
+        helpers.write_content_to_file(file_info, update_strategy[file_info['abbr']], args.diff, '', True)
 
     for file_info in mod_files['interfaces']:
         if file_info['abbr'].endswith('.hpp'):
-            helpers.write_content_to_file(file_info, primary_update_strategy, args.diff)
+            helpers.write_content_to_file(file_info, primary_update_strategy, args.diff, '', True)
         else:
-            helpers.write_content_to_file(file_info, 'update-if-non-existent', args.diff)
+            helpers.write_content_to_file(file_info, 'update-if-non-existent', args.diff, '', True)
 
 
 def module_genld(args):
     output_dir = Path(args.output_dir).resolve() if args.output_dir else work_dir / \
         'build/generated/generated/modules'
+    primary_update_strategy = 'force-update' if args.force else 'update'
 
     loader_files = generate_module_loader_files(args.module, output_dir)
 
@@ -576,7 +615,15 @@ def module_genld(args):
             helpers.clang_format(args.clang_format_file, file_info)
 
     for file_info in loader_files:
-        helpers.write_content_to_file(file_info, 'force-update')
+        helpers.write_content_to_file_and_check_template(file_info, primary_update_strategy)
+
+
+def module_get_templates(args):
+    interface_files = args.separator.join(
+        [templates['ld-ev.hpp'].filename,
+         templates['ld-ev.cpp'].filename])
+
+    print(f'{interface_files}')
 
 
 def interface_genhdr(args):
@@ -607,9 +654,17 @@ def interface_genhdr(args):
             helpers.clang_format(args.clang_format_file, if_parts['exports'])
             helpers.clang_format(args.clang_format_file, if_parts['types'])
 
-        helpers.write_content_to_file(if_parts['base'], primary_update_strategy, args.diff)
-        helpers.write_content_to_file(if_parts['exports'], primary_update_strategy, args.diff)
-        helpers.write_content_to_file(if_parts['types'], primary_update_strategy, args.diff)
+        helpers.write_content_to_file_and_check_template(if_parts['base'], primary_update_strategy, args.diff)
+        helpers.write_content_to_file_and_check_template(if_parts['exports'], primary_update_strategy, args.diff)
+        helpers.write_content_to_file_and_check_template(if_parts['types'], primary_update_strategy, args.diff)
+
+
+def interface_get_templates(args):
+    interface_files = args.separator.join(
+        [templates['interface_base'].filename,
+         templates['interface_exports'].filename])
+
+    print(f'{interface_files}')
 
 
 def helpers_genuuids(args):
@@ -681,7 +736,13 @@ def types_genhdr(args):
         if not args.disable_clang_format:
             helpers.clang_format(args.clang_format_file, type_parts['types'])
 
-        helpers.write_content_to_file(type_parts['types'], primary_update_strategy, args.diff)
+        helpers.write_content_to_file_and_check_template(type_parts['types'], primary_update_strategy, args.diff)
+
+
+def types_get_templates(args):
+    interface_files = templates['types.hpp'].filename
+
+    print(f'{interface_files}')
 
 
 def main():
@@ -695,10 +756,20 @@ def main():
     common_parser.add_argument('--work-dir', '-wd', type=str,
                                help='work directory containing the manifest definitions (default: .)', default=str(Path.cwd()))
     common_parser.add_argument('--everest-dir', '-ed', nargs='*',
-                               help='everest directory containing the interface definitions (default: .)', default=[str(Path.cwd())])
+                               help='everest directory containing the interface definitions (default: .)',
+                               default=[str(Path.cwd()), str(Path.cwd() / '../everest-core')])
+    common_parser.add_argument('--everest-projects', '-ep', nargs='*',
+                               help='everest project names. used in auto detection of their directories to get eg. interface defintions (default: everest-core)',
+                               default=['everest-core'])
     common_parser.add_argument('--schemas-dir', '-sd', type=str,
                                help='everest framework directory containing the schema definitions (default: ../everest-framework/schemas)',
                                default=str(Path.cwd() / '../everest-framework/schemas'))
+    common_parser.add_argument('--licenses', '-lc', type=str,
+                               help='license directory from which ev-cli will attempt to parse custom license texts (default ../licenses)',
+                               default=str(Path.cwd() / '../licenses'))
+    common_parser.add_argument('--build-dir', '-bd', type=str,
+                               help='everest build directory from which ev-cli will attempt to parse the everest framework schema definitions (default ./build)',
+                               default=str(Path.cwd() / 'build'))
     common_parser.add_argument('--clang-format-file', type=str, default=str(Path.cwd()),
                                help='Path to the directory, containing the .clang-format file (default: .)')
     common_parser.add_argument('--disable-clang-format', action='store_true', default=False,
@@ -736,6 +807,7 @@ def main():
         'generate-loader', aliases=['gl'], parents=[common_parser], help='generate everest loader')
     mod_genld_parser.add_argument(
         'module', type=str, help='name of the module, for which the loader should be generated')
+    mod_genld_parser.add_argument('-f', '--force', action='store_true', help='force overwriting')
     mod_genld_parser.add_argument('-o', '--output-dir', type=str, help='Output directory for generated loader '
                                   'files (default: {everest-dir}/build/generated/generated/modules)')
     mod_genld_parser.set_defaults(action_handler=module_genld)
@@ -753,7 +825,7 @@ def main():
     if_genhdr_parser.set_defaults(action_handler=interface_genhdr)
 
     hlp_actions = parser_hlp.add_subparsers(metavar='<action>', help='available actions', required=True)
-    hlp_genuuid_parser = hlp_actions.add_parser('generate-uuids', help='generete uuids')
+    hlp_genuuid_parser = hlp_actions.add_parser('generate-uuids', help='generate uuids')
     hlp_genuuid_parser.add_argument('count', type=int, default=3)
     hlp_genuuid_parser.set_defaults(action_handler=helpers_genuuids)
 
@@ -769,7 +841,7 @@ def main():
 
     types_actions = parser_types.add_subparsers(metavar='<action>', help='available actions', required=True)
     types_genhdr_parser = types_actions.add_parser(
-        'generate-headers', aliases=['gh'], parents=[common_parser], help='generete type headers')
+        'generate-headers', aliases=['gh'], parents=[common_parser], help='generate type headers')
     types_genhdr_parser.add_argument('-f', '--force', action='store_true', help='force overwriting')
     types_genhdr_parser.add_argument('-o', '--output-dir', type=str, help='Output directory for generated type '
                                      'headers (default: {everest-dir}/build/generated/generated/types)')
@@ -778,6 +850,17 @@ def main():
                                      'be generated - if no type is given, all will be processed and non-processable '
                                      'will be skipped')
     types_genhdr_parser.set_defaults(action_handler=types_genhdr)
+
+    for sub_parser, get_template_function in [
+        (mod_actions, module_get_templates),
+        (if_actions, interface_get_templates),
+        (types_actions, types_get_templates)
+    ]:
+        get_templates_parser = sub_parser.add_parser(
+            'get-templates', aliases=['gt'], parents=[common_parser], help='get paths to template files')
+        get_templates_parser.add_argument(
+            '-s', '--separator', type=str, default='\n', help='separator between template files')
+        get_templates_parser.set_defaults(action_handler=get_template_function)
 
     args = parser.parse_args()
 
@@ -797,10 +880,16 @@ def main():
 
         schemas_dir = Path(args.schemas_dir).resolve()
         if not schemas_dir.exists():
-            print('The default ("../everest-framework/schemas") xor supplied (via --schemas-dir) schemas directory\n'
-                  'doesn\'t exist.\n'
+            print('The default ("../everest-framework/schemas") xor supplied (via --schemas-dir) schemas directory'
+                  ' doesn\'t exist.\n'
                   f'dir: {schemas_dir}')
-            exit(1)
+            cmake_cache_path = Path(args.build_dir) / 'CMakeCache.txt'
+            found_dir = helpers.get_path_from_cmake_cache('everest-framework', cmake_cache_path, '--schemas-dir')
+            if not found_dir:
+                exit(1)
+            schemas_dir = found_dir / 'schemas'
+            if not schemas_dir.exists():
+                exit(1)
 
         validators = helpers.load_validators(schemas_dir)
 
