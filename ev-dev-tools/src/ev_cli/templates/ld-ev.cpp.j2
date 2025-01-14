@@ -1,6 +1,6 @@
 {% from "helper_macros.j2" import print_template_info, var_to_cpp, print_spdx_line %}
 {{ print_spdx_line('Apache-2.0') }}
-{{ print_template_info('4') }}
+{{ print_template_info('5') }}
 
 #include "{{ info.ld_ev_header }}"
 
@@ -81,6 +81,11 @@ void LdEverest::ready() {
     mod_ptr->ready();
 }
 
+void LdEverest::shutdown() {
+    EVLOG_debug << "shutdown() called on module {{ info.name }}";
+    mod_ptr->shutdown();
+}
+
 void register_module_adapter(Everest::ModuleAdapter module_adapter) {
     adapter = std::move(module_adapter);
 }
@@ -147,7 +152,7 @@ std::vector<Everest::cmd> everest_register(const json& connections) {
 int main(int argc, char* argv[]) {
     auto module_loader = Everest::ModuleLoader(argc, argv, Everest::ModuleCallbacks(
         module::register_module_adapter, module::everest_register,
-        module::LdEverest::init, module::LdEverest::ready),
+        module::LdEverest::init, module::LdEverest::ready, module::LdEverest::shutdown),
         {PROJECT_NAME, PROJECT_VERSION, GIT_VERSION});
 
     return module_loader.initialize();
