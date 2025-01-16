@@ -202,11 +202,11 @@ EVerest code coverage
 
 This python project currently consists of the following packages
 
-- `everest-coverage`: EVerest module auto generation
+- `ev-coverage`: EVerest module auto generation
 
 Install
 -------
-To install `everest-coverage`:
+To install `ev-coverage`:
 
     python3 -m pip install .
 
