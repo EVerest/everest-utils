@@ -15,10 +15,9 @@ import argparse
 
 def remove_all_gcda_files(build_dir: str):
     print("Removing all gcda files from build directory")
+
     dir = pathlib.Path(build_dir)
-    files = dir.rglob("*.gcda")  # recursively
-    for f in files:
-        os.remove(f)
+    [os.remove(f) for f in dir.rglob("*.gcda")]
 
 
 def remove_orphaned_object_files(build_dir: str, source_dirs: list[str]):
@@ -35,18 +34,15 @@ def remove_orphaned_object_files(build_dir: str, source_dirs: list[str]):
         # 2. Remove the source directory part from the path
         for src_dir in source_dirs:
             if relative_path_obj.startswith(src_dir[1:]):
-                relative_path_obj = relative_path_obj[len(src_dir):].lstrip(os.sep)  # Remove the source directory part
+                # Remove the source directory part
+                relative_path_obj = relative_path_obj[len(src_dir):].lstrip(os.sep)
                 break
 
         # Get the base name of the object file (remove the path)
         obj_basename = os.path.basename(obj_file)
 
         # Convert the object file base name to the corresponding cpp file name
-        if obj_basename.endswith("cpp.o"):
-            # Remove .o
-            cpp_basename = obj_basename[:-2]
-        else:
-            cpp_basename = obj_basename.replace(".o", ".cpp")
+        cpp_basename = obj_basename[:-2] if obj_basename.endswith("cpp.o") else obj_basename.replace(".o", ".cpp")
 
         relative_dir = os.path.split(relative_path_obj)
         relative_path_cpp = relative_dir[0] + os.sep + cpp_basename
@@ -73,16 +69,26 @@ def remove_orphaned_object_files(build_dir: str, source_dirs: list[str]):
                 os.remove(obj_file)
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--source-dirs', nargs='+', type=str, action='extend', required=True,
-                        help="Source files directories to search in for cpp files. Can be multiple, "
-                             "separated by a space.")
-    parser.add_argument('--build-dir', type=str, required=True, help="Build directory")
-    args = parser.parse_args()
-
+def remove_unnecessary_files(args):
     remove_all_gcda_files(build_dir=args.build_dir)
     remove_orphaned_object_files(build_dir=args.build_dir, source_dirs=args.source_dirs)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+
+    subparsers = parser.add_subparsers(metavar='<command>', help='available commands', required=True)
+    parser_file_remover = subparsers.add_parser('remove_files', help='Remove orphaned / unnecessary files')
+
+
+    parser_file_remover.add_argument('--source-dirs', nargs='+', type=str, action='extend', required=True,
+                        help="Source files directories to search in for cpp files. Can be multiple, "
+                             "separated by a space.")
+    parser_file_remover.add_argument('--build-dir', type=str, required=True, help="Build directory")
+    parser_file_remover.set_defaults(action_handler=remove_unnecessary_files)
+    args = parser.parse_args()
+
+    args.action_handler(args)
 
 
 if __name__ == '__main__':
