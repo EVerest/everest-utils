@@ -210,8 +210,8 @@ To install `everest-coverage`:
 
     python3 -m pip install .
 
-everest-coverage-remove-unnecessary-files
------------------------------------------
+ev-coverage
+-----------
 
 Script to be able to remove unnecessary files that are used for coverage information.
 
@@ -233,7 +233,7 @@ script and re-running the unit tests and gcovr, this should not occur anymore.
 
 Usage:
 
-    everest-coverage-remove-unnecessary-files --source-dirs <source dirs> --build-dir <build-dir>
+    ev-coverage remove_files --source-dirs <source dirs> --build-dir <build-dir>
 
 Required options:
 - --source-dirs
@@ -246,4 +246,5 @@ Required options:
 Example usage:
 
 For only removing the files from libocpp built from the everest repo:
-`everest-coverage-remove-unnecessary-files --source-dirs /data/work/pionix/workspace/libocpp --build-dir=/data/work/pionix/workspace/everest-core/build/_deps/libocpp-build`
+
+    ev-coverage remove_files --source-dirs /data/work/pionix/workspace/libocpp --build-dir=/data/work/pionix/workspace/everest-core/build/_deps/libocpp-build
