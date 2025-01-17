@@ -11,6 +11,7 @@ import os
 import glob
 import pathlib
 import argparse
+from ev_coverage import __version__
 
 
 def remove_all_gcda_files(build_dir: str):
@@ -75,7 +76,8 @@ def remove_unnecessary_files(args):
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser('Everest coverage command line tools')
+    parser.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
 
     subparsers = parser.add_subparsers(metavar='<command>', help='available commands', required=True)
     parser_file_remover = subparsers.add_parser('remove_files', help='Remove orphaned / unnecessary files')

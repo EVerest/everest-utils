@@ -1,2 +1,4 @@
 """EVerest command line utility."""
-__version__ = '0.4.5'
+from importlib.metadata import version
+
+__version__ = version('ev-dev-tools')
