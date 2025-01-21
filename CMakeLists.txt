@@ -17,4 +17,9 @@ ev_add_pip_package(
     SOURCE_DIRECTORY ev-dev-tools
 )
 
+ev_add_pip_package(
+    NAME everest-testing
+    SOURCE_DIRECTORY everest-testing
+)
+
 add_subdirectory(everest-testing)
