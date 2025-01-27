@@ -105,9 +105,10 @@ def remove_orphaned_object_files(build_dir: str, source_dirs: list[str], dry_run
 
 
 def remove_unnecessary_files(args):
-    removed_files = RemovedFiles(0,0)
+    removed_files = RemovedFiles(0, 0)
     removed_files.gcda = remove_all_gcda_files(build_dir=args.build_dir, dry_run=args.dry_run, silent=args.silent)
-    removed_files.orphaned_object = remove_orphaned_object_files(build_dir=args.build_dir, source_dirs=args.source_dirs, dry_run=args.dry_run, silent=args.silent)
+    removed_files.orphaned_object = remove_orphaned_object_files(
+        build_dir=args.build_dir, source_dirs=args.source_dirs, dry_run=args.dry_run, silent=args.silent)
     if args.summary:
         prefix = '(dry-run) Would have removed' if args.dry_run else 'Removed'
         print(f'{prefix} {removed_files.gcda} .gcda files and {removed_files.orphaned_object} orphaned .o files')
@@ -118,16 +119,19 @@ def main():
     parser.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
 
     subparsers = parser.add_subparsers(metavar='<command>', help='available commands', required=True)
-    parser_file_remover = subparsers.add_parser('remove_files', aliases=['rm'], help='Remove orphaned / unnecessary files')
-
+    parser_file_remover = subparsers.add_parser(
+        'remove_files', aliases=['rm'], help='Remove orphaned / unnecessary files')
 
     parser_file_remover.add_argument('--source-dirs', nargs='+', type=str, action='extend', required=True,
-                        help='Source files directories to search in for cpp files. Can be multiple, '
-                             'separated by a space.')
+                                     help='Source files directories to search in for cpp files. Can be multiple, '
+                                     'separated by a space.')
     parser_file_remover.add_argument('--build-dir', type=str, required=True, help='Build directory')
-    parser_file_remover.add_argument('--dry-run', required=False, action='store_true', help='Dry run, does not remove any files', default=False)
-    parser_file_remover.add_argument('--summary', required=False, action='store_true', help='Only show a summary of removed files', default=False)
-    parser_file_remover.add_argument('--silent', required=False, action='store_true', help='Suppress all output, summary is still shown when requested', default=False)
+    parser_file_remover.add_argument('--dry-run', required=False, action='store_true',
+                                     help='Dry run, does not remove any files', default=False)
+    parser_file_remover.add_argument('--summary', required=False, action='store_true',
+                                     help='Only show a summary of removed files', default=False)
+    parser_file_remover.add_argument('--silent', required=False, action='store_true',
+                                     help='Suppress all output, summary is still shown when requested', default=False)
     parser_file_remover.set_defaults(action_handler=remove_unnecessary_files)
     args = parser.parse_args()
 
@@ -136,5 +140,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
