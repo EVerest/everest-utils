@@ -283,7 +283,7 @@ def generate_module_files(rel_mod_dir, update_flag, licenses):
     cmakelists_blocks = {
         'version': 'v1',
         'format_str': '# ev@{uuid}:{version}',
-        'regex_str': '^(?P<indent>\s*)# ev@(?P<uuid>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):(?P<version>.*)$',
+        'regex_str': '^(?P<indent>\\s*)# ev@(?P<uuid>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):(?P<version>.*)$',
         'definitions': {
             'add_general': {
                 'id': 'bcc62523-e22b-41d7-ba2f-825b493a3c97',
@@ -299,7 +299,7 @@ def generate_module_files(rel_mod_dir, update_flag, licenses):
     impl_hpp_blocks = {
         'version': 'v1',
         'format_str': '// ev@{uuid}:{version}',
-        'regex_str': '^(?P<indent>\s*)// ev@(?P<uuid>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):(?P<version>.*)$',
+        'regex_str': '^(?P<indent>\\s*)// ev@(?P<uuid>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):(?P<version>.*)$',
         'definitions': {
             'add_headers': {
                 'id': '75ac1216-19eb-4182-a85c-820f1fc2c091',
@@ -327,7 +327,7 @@ def generate_module_files(rel_mod_dir, update_flag, licenses):
     mod_hpp_blocks = {
         'version': 'v1',
         'format_str': '// ev@{uuid}:{version}',
-        'regex_str': '^(?P<indent>\s*)// ev@(?P<uuid>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):(?P<version>.*)$',
+        'regex_str': '^(?P<indent>\\s*)// ev@(?P<uuid>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):(?P<version>.*)$',
         'definitions': {
             'add_headers': {
                 'id': '4bf81b14-a215-475c-a1d3-0a484ae48918',
