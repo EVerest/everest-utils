@@ -230,21 +230,31 @@ Dangling / orphaned object files can exist when switching branches and in the ol
 in the new branch. When running gcovr in the new branch, it will fail with a file not found error. After running this
 script and re-running the unit tests and gcovr, this should not occur anymore.
 
+Note: this script can use llvm-dwarfdump or gdb. gdb is very slow, so if you want a better experience, just install
+      llvm-dwarfdump
+
 
 Usage:
 
-    ev-coverage remove_files --source-dirs <source dirs> --build-dir <build-dir>
+    ev-coverage remove_files --build-dir <build-dir>
 
 Required options:
-- --source-dirs
-  Enter one or more source directories to search for the dangling cpp files. Can be space separated or --source-dirs
-  can be added multiple times
 - --build-dir
   Build directory. In some subdirectory of this build dir, the object, gcno and gcda files are present.
+
+Other options:
+- --version
+  Only show version of the tool and quit
+- --dry-run
+  Does not remove any files
+- --summary
+  Show a summary of removed files
+- --silent
+  Suppress all output, summary is still shown when requested
 
 
 Example usage:
 
 For only removing the files from libocpp built from the everest repo:
 
-    ev-coverage remove_files --source-dirs /data/work/pionix/workspace/libocpp --build-dir=/data/work/pionix/workspace/everest-core/build/_deps/libocpp-build
+    ev-coverage remove_files --build-dir=/data/work/pionix/workspace/everest-core/build/_deps/libocpp-build

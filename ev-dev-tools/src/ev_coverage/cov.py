@@ -11,6 +11,9 @@ import os
 import glob
 import pathlib
 import argparse
+import shutil
+import subprocess
+import re
 from dataclasses import dataclass
 from ev_coverage import __version__
 
@@ -41,61 +44,64 @@ def remove_all_gcda_files(build_dir: str, dry_run: bool, silent: bool) -> int:
     return len([remove_wrapper(f, dry_run, silent) for f in dir.rglob('*.gcda')])
 
 
-def remove_orphaned_object_files(build_dir: str, source_dirs: list[str], dry_run: bool, silent: bool) -> int:
+def remove_orphaned_object_files(build_dir: str, use_dwarfdump: bool, dry_run: bool, silent: bool) -> int:
     log_wrapper('Removing orphaned object files and gcno files from build directory', silent)
     # Find all object files (*.o) in the build directory
     object_files = glob.glob(f'{build_dir}/**/*.o', recursive=True)
     removed_files = 0
 
-    for obj_file in object_files:
-        # 1. Remove everything in the path until "*.dir/"
-        strip_substr = '.dir' + os.sep
-        split_len = obj_file.find(strip_substr) + len(strip_substr)
-        relative_path_obj = obj_file[split_len:]
+    if not use_dwarfdump:
+        log_wrapper(
+            'Using GDB to check for object files. This is way slower than using dwarfdump. You can install dwarfdump '
+            '(llvm-dwarfdump) to speed up the process', False)
 
-        # 2. Remove the source directory part from the path
-        for src_dir in source_dirs:
-            if relative_path_obj.startswith(src_dir[1:]):
-                # Remove the source directory part
-                relative_path_obj = relative_path_obj[len(src_dir):].lstrip(os.sep)
-                break
+    for obj_file in object_files:
+        cpp_file_exists = False
+
+        full_path = pathlib.PurePosixPath(obj_file)
 
         # Get the base name of the object file (remove the path)
-        obj_basename = os.path.basename(obj_file)
+        # obj_basename = os.path.basename(obj_file)
+        obj_basename = full_path.name
+        obj_dir = full_path.parent
 
         # Convert the object file base name to the corresponding cpp file name
         cpp_basename = obj_basename[:-2] if obj_basename.endswith('cpp.o') else obj_basename.replace('.o', '.cpp')
 
-        relative_dir = os.path.split(relative_path_obj)
-        relative_path_cpp = relative_dir[0] + os.sep + cpp_basename
+        if use_dwarfdump:
+            # if False:
+            # Get the source file belonging to the object file
+            command_dwarfdump = f'llvm-dwarfdump --show-sources {obj_file} | grep {cpp_basename}'
+            result = subprocess.run([command_dwarfdump], stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
 
-        cpp_file_exists = False
+            if os.path.isfile(result.strip()):
+                cpp_file_exists = True
+        else:
+            # Get the source file belonging to the object file
+            command = f'/usr/bin/gdb -q -ex "set height 0" -ex "info sources" -ex quit {obj_file} | grep {cpp_basename}'
 
-        # Loop through each source directory to check for the existence of the corresponding .cpp file
-        for src_dir in source_dirs:
-            try:
-                for p in pathlib.Path(src_dir).rglob(relative_path_cpp):
-                    if os.path.isfile(p):
-                        cpp_file_exists = True
-                        break
-            except NotImplementedError:
-                # FIXME(kai): this is mostly triggered by .o files of dependencies in _deps subdirs
-                # where the source file cannot be obtained from our own source tree
-                pass
+            result = subprocess.run([command], stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
+
+            # This will return some information, including a comma separated list of files on one line. So this should
+            # be split.
+            paths = re.split('\n|,|:', result)
+            # Loop over all strings read from the gdb command, which includes paths. If the string ends with the name
+            # of the file, then it should be the source
+            for path in paths:
+                if path.strip().endswith(cpp_basename) and os.path.isfile(path):
+                    # Found path, do not remove!
+                    cpp_file_exists = True
+                    break
 
         # If no corresponding .cpp file was found, remove the orphaned .o file
         if not cpp_file_exists:
             log_wrapper(f'Removing orphaned object file: {obj_file}', silent)
-            try:
-                for p in pathlib.Path(build_dir).rglob(relative_path_cpp + '*'):
-                    if os.path.isfile(p):
-                        log_wrapper(f'Removing other orphaned file: {p}', silent)
-                        remove_wrapper(p, dry_run, silent)
-                        removed_files += 1
-            except NotImplementedError:
-                # FIXME(kai): this is mostly triggered by .o files of dependencies in _deps subdirs
-                # where the source file cannot be obtained from our own source tree
-                pass
+            for p in pathlib.Path(obj_dir).glob(obj_basename + "*"):
+                # for p in pathlib.Path(build_dir).rglob(relative_path_cpp + '*'):
+                if os.path.isfile(p):
+                    log_wrapper(f'Removing other orphaned file: {p}', silent)
+                    remove_wrapper(p, dry_run, silent)
+                    removed_files += 1
             # If obj file is not removed in the previous loop, remove it now
             if os.path.isfile(obj_file):
                 log_wrapper(f'Removing object file: {obj_file}', silent)
@@ -105,13 +111,25 @@ def remove_orphaned_object_files(build_dir: str, source_dirs: list[str], dry_run
 
 
 def remove_unnecessary_files(args):
+    use_dwarfdump = shutil.which('llvm-dwarfdump')
+    gdb_exists = shutil.which('gdb')
+
+    if not gdb_exists and not use_dwarfdump:
+        log_wrapper('GDB and dwarfdump do not exist. Install one of them to be able to run this script', False)
+        exit(-1)
+
     removed_files = RemovedFiles(0, 0)
     removed_files.gcda = remove_all_gcda_files(build_dir=args.build_dir, dry_run=args.dry_run, silent=args.silent)
     removed_files.orphaned_object = remove_orphaned_object_files(
-        build_dir=args.build_dir, source_dirs=args.source_dirs, dry_run=args.dry_run, silent=args.silent)
+        build_dir=args.build_dir, use_dwarfdump=use_dwarfdump, dry_run=args.dry_run, silent=args.silent)
     if args.summary:
         prefix = '(dry-run) Would have removed' if args.dry_run else 'Removed'
-        print(f'{prefix} {removed_files.gcda} .gcda files and {removed_files.orphaned_object} orphaned .o files')
+        print(f'{prefix} {removed_files.gcda} .gcda files and {removed_files.orphaned_object} orphaned object files')
+
+    if not use_dwarfdump:
+        log_wrapper(
+            '\n === Did that take a longggg time? Install dwarfdump (llvm0-dwarfdump) to get quicker results '
+            'next time! === \n', False)
 
 
 def main():
@@ -122,9 +140,6 @@ def main():
     parser_file_remover = subparsers.add_parser(
         'remove_files', aliases=['rm'], help='Remove orphaned / unnecessary files')
 
-    parser_file_remover.add_argument('--source-dirs', nargs='+', type=str, action='extend', required=True,
-                                     help='Source files directories to search in for cpp files. Can be multiple, '
-                                     'separated by a space.')
     parser_file_remover.add_argument('--build-dir', type=str, required=True, help='Build directory')
     parser_file_remover.add_argument('--dry-run', required=False, action='store_true',
                                      help='Dry run, does not remove any files', default=False)
