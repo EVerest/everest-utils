@@ -11,20 +11,41 @@ import os
 import glob
 import pathlib
 import argparse
+from dataclasses import dataclass
 from ev_coverage import __version__
 
 
-def remove_all_gcda_files(build_dir: str):
-    print("Removing all gcda files from build directory")
+@dataclass
+class RemovedFiles:
+    """Keeps track of the amount of deleted files of different categories."""
+    gcda: int
+    orphaned_object: int
+
+
+def log_wrapper(message: str, silent: bool):
+    if not silent:
+        print(f'{message}')
+
+
+def remove_wrapper(filepath: pathlib.Path, dry_run=True, silent=False):
+    if dry_run:
+        log_wrapper(f'(dry-run) did not remove: {filepath}', silent)
+        return
+    os.remove(filepath)
+
+
+def remove_all_gcda_files(build_dir: str, dry_run: bool, silent: bool) -> int:
+    log_wrapper("Removing all gcda files from build directory", silent)
 
     dir = pathlib.Path(build_dir)
-    [os.remove(f) for f in dir.rglob("*.gcda")]
+    return len([remove_wrapper(f, dry_run, silent) for f in dir.rglob("*.gcda")])
 
 
-def remove_orphaned_object_files(build_dir: str, source_dirs: list[str]):
-    print("Removing orphaned object files and gcno files from build directory")
+def remove_orphaned_object_files(build_dir: str, source_dirs: list[str], dry_run: bool, silent: bool) -> int:
+    log_wrapper("Removing orphaned object files and gcno files from build directory", silent)
     # Find all object files (*.o) in the build directory
     object_files = glob.glob(f"{build_dir}/**/*.o", recursive=True)
+    removed_files = 0
 
     for obj_file in object_files:
         # 1. Remove everything in the path until "*.dir/"
@@ -52,27 +73,44 @@ def remove_orphaned_object_files(build_dir: str, source_dirs: list[str]):
 
         # Loop through each source directory to check for the existence of the corresponding .cpp file
         for src_dir in source_dirs:
-            for p in pathlib.Path(src_dir).rglob(relative_path_cpp):
-                if os.path.isfile(p):
-                    cpp_file_exists = True
-                    break
+            try:
+                for p in pathlib.Path(src_dir).rglob(relative_path_cpp):
+                    if os.path.isfile(p):
+                        cpp_file_exists = True
+                        break
+            except NotImplementedError:
+                # FIXME(kai): this is mostly triggered by .o files of dependencies in _deps subdirs
+                # where the source file cannot be obtained from our own source tree
+                pass
 
         # If no corresponding .cpp file was found, remove the orphaned .o file
         if not cpp_file_exists:
-            print(f"Removing orphaned object file: {obj_file}")
-            for p in pathlib.Path(build_dir).rglob(relative_path_cpp + "*"):
-                if os.path.isfile(p):
-                    print(f"Removing other orphaned file: {p}")
-                    os.remove(p)
+            log_wrapper(f"Removing orphaned object file: {obj_file}", silent)
+            try:
+                for p in pathlib.Path(build_dir).rglob(relative_path_cpp + "*"):
+                    if os.path.isfile(p):
+                        log_wrapper(f"Removing other orphaned file: {p}", silent)
+                        remove_wrapper(p, dry_run, silent)
+                        removed_files += 1
+            except NotImplementedError:
+                # FIXME(kai): this is mostly triggered by .o files of dependencies in _deps subdirs
+                # where the source file cannot be obtained from our own source tree
+                pass
             # If obj file is not removed in the previous loop, remove it now
             if os.path.isfile(obj_file):
-                print(f"Removing object file: {p}")
-                os.remove(obj_file)
+                log_wrapper(f"Removing object file: {obj_file}", silent)
+                remove_wrapper(obj_file, dry_run, silent)
+                removed_files += 1
+    return removed_files
 
 
 def remove_unnecessary_files(args):
-    remove_all_gcda_files(build_dir=args.build_dir)
-    remove_orphaned_object_files(build_dir=args.build_dir, source_dirs=args.source_dirs)
+    removed_files = RemovedFiles(0,0)
+    removed_files.gcda = remove_all_gcda_files(build_dir=args.build_dir, dry_run=args.dry_run, silent=args.silent)
+    removed_files.orphaned_object = remove_orphaned_object_files(build_dir=args.build_dir, source_dirs=args.source_dirs, dry_run=args.dry_run, silent=args.silent)
+    if args.summary:
+        prefix = '(dry-run) Would have removed' if args.dry_run else 'Removed'
+        print(f'{prefix} {removed_files.gcda} .gcda files and {removed_files.orphaned_object} orphaned .o files')
 
 
 def main():
@@ -87,6 +125,9 @@ def main():
                         help="Source files directories to search in for cpp files. Can be multiple, "
                              "separated by a space.")
     parser_file_remover.add_argument('--build-dir', type=str, required=True, help="Build directory")
+    parser_file_remover.add_argument('--dry-run', required=False, action='store_true', help="Dry run, does not remove any files", default=False)
+    parser_file_remover.add_argument('--summary', required=False, action='store_true', help="Only show a summary of removed files", default=False)
+    parser_file_remover.add_argument('--silent', required=False, action='store_true', help="Suppress all output, summary is still shown when requested", default=False)
     parser_file_remover.set_defaults(action_handler=remove_unnecessary_files)
     args = parser.parse_args()
 
