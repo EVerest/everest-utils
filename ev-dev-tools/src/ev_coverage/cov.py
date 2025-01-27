@@ -80,7 +80,7 @@ def main():
     parser.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
 
     subparsers = parser.add_subparsers(metavar='<command>', help='available commands', required=True)
-    parser_file_remover = subparsers.add_parser('remove_files', help='Remove orphaned / unnecessary files')
+    parser_file_remover = subparsers.add_parser('remove_files', aliases=['rm'], help='Remove orphaned / unnecessary files')
 
 
     parser_file_remover.add_argument('--source-dirs', nargs='+', type=str, action='extend', required=True,
