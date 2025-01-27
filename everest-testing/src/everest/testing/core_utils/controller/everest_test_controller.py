@@ -2,7 +2,6 @@ import json
 import os
 import paho.mqtt.client as mqtt
 from paho.mqtt import __version__ as paho_mqtt_version
-import logging
 
 from everest.testing.core_utils.everest_core import EverestCore
 
