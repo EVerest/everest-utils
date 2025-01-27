@@ -66,16 +66,20 @@ def remove_orphaned_object_files(build_dir: str, use_dwarfdump: bool, dry_run: b
         obj_dir = full_path.parent
 
         # Convert the object file base name to the corresponding cpp file name
-        cpp_basename = obj_basename[:-2] if obj_basename.endswith('cpp.o') else obj_basename.replace('.o', '.cpp')
+        cpp_basename = obj_basename[:-2] \
+            if obj_basename.endswith('cpp.o') or obj_basename.endswith('c.o') or obj_basename.endswith('cc.o') \
+            else obj_basename.replace('.o', '.cpp')
 
         if use_dwarfdump:
             # if False:
             # Get the source file belonging to the object file
             command_dwarfdump = f'llvm-dwarfdump --show-sources {obj_file} | grep {cpp_basename}'
-            result = subprocess.run([command_dwarfdump], stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
+            result = subprocess.run([command_dwarfdump], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                                    shell=True).stdout.decode('utf-8')
 
-            if os.path.isfile(result.strip()):
-                cpp_file_exists = True
+            # This will return some information, which sometimes is just the file and sometimes a list of files,
+            # one per line. The latter should be split.
+            paths = re.split('\n', result)
         else:
             # Get the source file belonging to the object file
             command = f'/usr/bin/gdb -q -ex "set height 0" -ex "info sources" -ex quit {obj_file} | grep {cpp_basename}'
@@ -87,11 +91,13 @@ def remove_orphaned_object_files(build_dir: str, use_dwarfdump: bool, dry_run: b
             paths = re.split('\n|,|:', result)
             # Loop over all strings read from the gdb command, which includes paths. If the string ends with the name
             # of the file, then it should be the source
-            for path in paths:
-                if path.strip().endswith(cpp_basename) and os.path.isfile(path):
-                    # Found path, do not remove!
-                    cpp_file_exists = True
-                    break
+
+        for path in paths:
+            path = path.strip()
+            if path.endswith(cpp_basename) and os.path.isfile(path):
+                # Found path, do not remove!
+                cpp_file_exists = True
+                break
 
         # If no corresponding .cpp file was found, remove the orphaned .o file
         if not cpp_file_exists:
