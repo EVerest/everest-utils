@@ -6,7 +6,7 @@ project(everest-utils
     LANGUAGES CXX C
 )
 
-find_package(everest-cmake 0.3 REQUIRED
+find_package(everest-cmake 0.5 REQUIRED
     PATHS ../everest-cmake
 )
 
