@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 
 project(everest-utils
-    VERSION 0.3.0
+    VERSION 0.5.0
     DESCRIPTION "A collection of utilities for the EVerest project"
     LANGUAGES CXX C
 )
