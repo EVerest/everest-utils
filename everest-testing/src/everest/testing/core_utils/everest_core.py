@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright Pionix GmbH and Contributors to EVerest
+# Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
 import logging
 import os
@@ -17,10 +17,6 @@ import selectors
 from signal import SIGINT
 
 from everest.framework import RuntimeSession
-try:
-    from everest.framework import MQTTSettings
-except ImportError:
-    pass
 from everest.testing.core_utils.common import Requirement
 from ._configuration.everest_configuration_strategies.everest_configuration_strategy import \
     EverestConfigAdjustmentStrategy
@@ -253,13 +249,5 @@ class EverestCore:
         file.write_text(yaml.dump(user_config))
 
     def get_runtime_session(self):
-        try:
-            mqtt_settings = MQTTSettings()
-            mqtt_settings.broker_host = os.getenv('MQTT_SERVER_ADDRESS', 'localhost')
-            mqtt_settings.broker_port = 1883
-            mqtt_settings.everest_prefix = f"everest_{self.everest_uuid}/"
-            mqtt_settings.external_prefix = f"{self.mqtt_external_prefix}/"
-            return RuntimeSession(mqtt_settings, "")
-        except NameError:
-            logging.warning("Could not use new RuntimeSession ctor because MQTTSettings is not available. Please update everest-framework")
-            return RuntimeSession(str(self.prefix_path), str(self.everest_config_path))
+        return RuntimeSession(str(self.prefix_path), str(self.everest_config_path))
+
