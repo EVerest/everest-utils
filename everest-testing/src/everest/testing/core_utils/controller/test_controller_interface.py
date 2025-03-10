@@ -35,9 +35,9 @@ class TestController():
         """
         raise NotImplementedError()
 
-    def plug_in_dc_ido(self, payment_type, connector_id):
+    def plug_in_dc_iso(self, payment_type, connector_id):
         """
-        
+        Plug in of an electric vehicle to the chargepoint using DC ISO15118.
         """
         raise NotImplementedError()
 
