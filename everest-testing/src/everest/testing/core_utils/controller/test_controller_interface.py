@@ -35,6 +35,12 @@ class TestController():
         """
         raise NotImplementedError()
 
+    def plug_in_dc_ido(self, payment_type, connector_id):
+        """
+        
+        """
+        raise NotImplementedError()
+
     def plug_out_iso(self, connector_id):
         """
         Plug out of an electric vehicle properly ending the ISO15118 session.
