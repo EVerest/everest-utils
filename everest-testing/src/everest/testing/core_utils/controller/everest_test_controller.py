@@ -58,7 +58,7 @@ class EverestTestController(TestController):
     def plug_in_dc_iso(self, connector_id=1):
         self._mqtt_client.publish(
             f"{self._mqtt_external_prefix}everest_external/nodered/{connector_id}/carsim/cmd/execute_charging_session",
-            "sleep 1;iso_wait_slac_matched;iso_start_v2g_session DC;iso_wait_pwr_ready;sleep 20;iso_stop_charging;iso_wait_v2g_session_stopped;unplug;iso_pause_charging;iso_wait_for_resume;iso_start_bcb_toggle 3;iso_wait_pwm_is_running;iso_start_v2g_session DC;iso_wait_pwr_ready;sleep 20;"
+            "sleep 1;iso_wait_slac_matched;iso_start_v2g_session DC;iso_wait_pwr_ready;iso_wait_for_stop 20;iso_wait_v2g_session_stopped;unplug"
         )
 
     def plug_out(self, connector_id=1):
