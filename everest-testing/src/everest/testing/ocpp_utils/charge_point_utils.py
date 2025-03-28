@@ -100,7 +100,7 @@ async def wait_for_and_validate(meta_data: TestUtility, charge_point: CP, exp_ac
     logging.debug(f"Waiting for {exp_action}")
 
     # check if expected message has been sent already
-    if (exp_message_has_already_been_sent(meta_data, exp_action, validate_payload_func)):
+    if (exp_message_has_already_been_sent(meta_data, exp_action, exp_payload, validate_payload_func)):
         return True
 
     if (await validate_incoming_messages(meta_data, charge_point, exp_action, exp_payload, validate_payload_func, timeout, False)):
