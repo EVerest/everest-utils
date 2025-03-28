@@ -100,50 +100,12 @@ async def wait_for_and_validate(meta_data: TestUtility, charge_point: CP, exp_ac
     logging.debug(f"Waiting for {exp_action}")
 
     # check if expected message has been sent already
-    if (meta_data.validation_mode == ValidationMode.EASY and
-        validate_against_old_messages(meta_data,
-                                      exp_action, exp_payload, validate_payload_func)):
-        logging.debug(
-            f"Found correct message {exp_action} with payload {exp_payload} in old messages")
-        logging.debug("OK!")
+    if (exp_message_has_already_been_sent(meta_data, exp_action, validate_payload_func)):
         return True
 
-    t_timeout = time.time() + timeout
-    while (time.time() < t_timeout):
-        try:
-            raw_message = await asyncio.wait_for(charge_point.wait_for_message(), timeout=timeout)
-            charge_point.message_event.clear()
-            msg = unpack(raw_message)
-            if (msg.message_type_id == 4):
-                logging.debug("Received CallError")
-            elif (msg.action != None):
-                logging.debug(f"Received Call {msg.action}")
-            elif (msg.message_type_id == 3):
-                logging.debug("Received CallResult")
+    if (validate_incoming_messages(meta_data, charge_point, exp_action, exp_payload, validate_payload_func, timeout, False)):
+        return True
 
-            meta_data.messages.append(msg)
-
-            response = validate_message(
-                msg, exp_action, exp_payload, validate_payload_func, meta_data)
-            if response != False:
-                logging.debug("Message validated successfully!")
-                meta_data.messages.remove(msg)
-                if response:
-                    return response
-                else:
-                    return True
-            else:
-                if (msg.message_type_id != 4):
-                    logging.debug(
-                        f"This message {msg.action} with payload {msg.payload} was not what I waited for")
-                    logging.debug(f"I wait for {exp_payload}")
-                # add msg to messages and wait for next message
-                meta_data.messages.append(msg)
-        except asyncio.TimeoutError:
-            logging.debug("Timeout while waiting for new message")
-
-    logging.info(
-        f"Timeout while waiting for correct message with action {exp_action} and payload {exp_payload}")
     logging.info("This is the message history")
     charge_point.message_history.log_history()
     return False
@@ -172,6 +134,18 @@ async def wait_for_and_validate_next_message_only_with_specific_action(meta_data
     logging.debug(f"Waiting for {exp_action}")
 
     # check if expected message has been sent already
+    if (exp_message_has_already_been_sent(meta_data, exp_action, validate_payload_func)):
+        return True
+
+    if (validate_incoming_messages(meta_data, charge_point, exp_action, exp_payload, validate_payload_func, timeout, True)):
+        return True
+
+    logging.info("This is the message history")
+    charge_point.message_history.log_history()
+    return False
+
+
+def exp_message_has_already_been_sent(meta_data, exp_action, exp_payload, validate_payload_func=None):
     if (meta_data.validation_mode == ValidationMode.EASY and
         validate_against_old_messages(meta_data,
                                       exp_action, exp_payload, validate_payload_func)):
@@ -179,7 +153,10 @@ async def wait_for_and_validate_next_message_only_with_specific_action(meta_data
             f"Found correct message {exp_action} with payload {exp_payload} in old messages")
         logging.debug("OK!")
         return True
+    return False
 
+
+async def validate_incoming_messages(meta_data, charge_point, exp_action, exp_payload, validate_payload_func, timeout, check_next_only):
     t_timeout = time.time() + timeout
     while (time.time() < t_timeout):
         try:
@@ -211,15 +188,12 @@ async def wait_for_and_validate_next_message_only_with_specific_action(meta_data
                     logging.debug(f"I wait for {exp_payload}")
                 # add msg to messages and wait for next message
                 meta_data.messages.append(msg)
-                if (msg.message_type_id == 2 and msg.action == exp_action):
+                if (check_next_only and msg.message_type_id == 2 and msg.action == exp_action):
                     return False
         except asyncio.TimeoutError:
             logging.debug("Timeout while waiting for new message")
-
-    logging.info(
-        f"Timeout while waiting for correct message with action {exp_action} and payload {exp_payload}")
-    logging.info("This is the message history")
-    charge_point.message_history.log_history()
+            logging.info(
+                f"Timeout while waiting for correct message with action {exp_action} and payload {exp_payload}")
     return False
 
 
