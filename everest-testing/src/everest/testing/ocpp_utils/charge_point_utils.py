@@ -9,6 +9,7 @@ import time
 import asyncio
 from enum import Enum
 from dataclasses import dataclass, field
+from typing import Optional, Any, Union
 from typing import Optional
 
 from ocpp.messages import unpack
@@ -79,7 +80,7 @@ class TestUtility:
 
 
 async def wait_for_and_validate(meta_data: TestUtility, charge_point: CP, exp_action: str,
-                                exp_payload, validate_payload_func=None, timeout: int = 30):
+                                exp_payload, validate_payload_func=None, timeout: int = 30) -> Union[bool, Any]:
 
     """This method waits for an expected message specified by the message_type, the action and the payload to be received.
     It also considers the meta_data that contains the message history, the validation mode and forbidden actions.
@@ -94,7 +95,7 @@ async def wait_for_and_validate(meta_data: TestUtility, charge_point: CP, exp_ac
         timeout (int, optional): time in seconds until waiting for the exp_payload times out. Defaults to 30.
 
     Returns:
-        _type_: _description_
+        Union[bool, Any]: True if valid message found, response if applicable, else False.
     """
 
     logging.debug(f"Waiting for {exp_action}")
@@ -103,8 +104,12 @@ async def wait_for_and_validate(meta_data: TestUtility, charge_point: CP, exp_ac
     if (exp_message_has_already_been_sent(meta_data, exp_action, exp_payload, validate_payload_func)):
         return True
 
-    if (await validate_incoming_messages(meta_data, charge_point, exp_action, exp_payload, validate_payload_func, timeout, False)):
-        return True
+    response = await validate_incoming_messages(
+        meta_data, charge_point, exp_action, exp_payload, validate_payload_func, timeout, False
+    )
+
+    if response:
+        return response
 
     logging.info("This is the message history")
     charge_point.message_history.log_history()
@@ -112,7 +117,7 @@ async def wait_for_and_validate(meta_data: TestUtility, charge_point: CP, exp_ac
 
 
 async def wait_for_and_validate_next_message_only_with_specific_action(meta_data: TestUtility, charge_point: CP, exp_action: str,
-                                                                       exp_payload, validate_payload_func=None, timeout: int = 30):
+                                                                       exp_payload, validate_payload_func=None, timeout: int = 30) -> Union[bool, Any]:
 
     """This method waits for an expected message specified by the message_type, the action and the payload to be received.
     It also considers the meta_data that contains the message history, the validation mode and forbidden actions.
@@ -128,7 +133,7 @@ async def wait_for_and_validate_next_message_only_with_specific_action(meta_data
         timeout (int, optional): time in seconds until waiting for the exp_payload times out. Defaults to 30.
 
     Returns:
-        _type_: _description_
+        Union[bool, Any]: True if valid message found, response if applicable, else False.
     """
 
     logging.debug(f"Waiting for {exp_action}")
@@ -137,8 +142,12 @@ async def wait_for_and_validate_next_message_only_with_specific_action(meta_data
     if (exp_message_has_already_been_sent(meta_data, exp_action, exp_payload, validate_payload_func)):
         return True
 
-    if (await validate_incoming_messages(meta_data, charge_point, exp_action, exp_payload, validate_payload_func, timeout, True)):
-        return True
+    response = await validate_incoming_messages(
+        meta_data, charge_point, exp_action, exp_payload, validate_payload_func, timeout, False
+    )
+
+    if response:
+        return response
 
     logging.info("This is the message history")
     charge_point.message_history.log_history()
