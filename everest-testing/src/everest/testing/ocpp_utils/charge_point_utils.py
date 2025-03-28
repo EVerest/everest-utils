@@ -103,7 +103,7 @@ async def wait_for_and_validate(meta_data: TestUtility, charge_point: CP, exp_ac
     if (exp_message_has_already_been_sent(meta_data, exp_action, validate_payload_func)):
         return True
 
-    if (validate_incoming_messages(meta_data, charge_point, exp_action, exp_payload, validate_payload_func, timeout, False)):
+    if (await validate_incoming_messages(meta_data, charge_point, exp_action, exp_payload, validate_payload_func, timeout, False)):
         return True
 
     logging.info("This is the message history")
@@ -137,7 +137,7 @@ async def wait_for_and_validate_next_message_only_with_specific_action(meta_data
     if (exp_message_has_already_been_sent(meta_data, exp_action, validate_payload_func)):
         return True
 
-    if (validate_incoming_messages(meta_data, charge_point, exp_action, exp_payload, validate_payload_func, timeout, True)):
+    if (await validate_incoming_messages(meta_data, charge_point, exp_action, exp_payload, validate_payload_func, timeout, True)):
         return True
 
     logging.info("This is the message history")
@@ -145,7 +145,7 @@ async def wait_for_and_validate_next_message_only_with_specific_action(meta_data
     return False
 
 
-def exp_message_has_already_been_sent(meta_data, exp_action, exp_payload, validate_payload_func=None):
+def exp_message_has_already_been_sent(meta_data: TestUtility, exp_action: str, exp_payload, validate_payload_func=None):
     if (meta_data.validation_mode == ValidationMode.EASY and
         validate_against_old_messages(meta_data,
                                       exp_action, exp_payload, validate_payload_func)):
@@ -156,7 +156,7 @@ def exp_message_has_already_been_sent(meta_data, exp_action, exp_payload, valida
     return False
 
 
-async def validate_incoming_messages(meta_data, charge_point, exp_action, exp_payload, validate_payload_func, timeout, check_next_only):
+async def validate_incoming_messages(meta_data: TestUtility, charge_point: CP, exp_action: str, exp_payload, validate_payload_func=None, timeout: int = 30, check_next_only=False):
     t_timeout = time.time() + timeout
     while (time.time() < t_timeout):
         try:
