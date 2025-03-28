@@ -81,15 +81,15 @@ class TestUtility:
 async def wait_for_and_validate(meta_data: TestUtility, charge_point: CP, exp_action: str,
                                 exp_payload, validate_payload_func=None, timeout: int = 30):
 
-    """This method waits for an expected message specified by the message_type, the action and the payload to be received. 
-    It also considers the meta_data that contains the message history, the validation mode and forbidden actions. 
+    """This method waits for an expected message specified by the message_type, the action and the payload to be received.
+    It also considers the meta_data that contains the message history, the validation mode and forbidden actions.
 
     Args:
         meta_data (TestUtility): contains the message history, the validation mode and forbidden actions that are considered in the validation
         charge_point (CP): The instance of the wrapper around the chargepoint websocket connection
         exp_action (str): The expected OCPP action (e.g. StatusNotification, BootNotification, etc.)
-        exp_payload (_type_): The expected payload. Can be of type dict or can also be a call or call_result of the ocpp lib. If a dict is given, 
-        only the subset of the entries given in the dict will be validated 
+        exp_payload (_type_): The expected payload. Can be of type dict or can also be a call or call_result of the ocpp lib. If a dict is given,
+        only the subset of the entries given in the dict will be validated
         validate_payload_func (function, optional): Optional validation function that can be used for more complex validations. Defaults to None.
         timeout (int, optional): time in seconds until waiting for the exp_payload times out. Defaults to 30.
 
@@ -139,6 +139,80 @@ async def wait_for_and_validate(meta_data: TestUtility, charge_point: CP, exp_ac
                     logging.debug(f"I wait for {exp_payload}")
                 # add msg to messages and wait for next message
                 meta_data.messages.append(msg)
+        except asyncio.TimeoutError:
+            logging.debug("Timeout while waiting for new message")
+
+    logging.info(
+        f"Timeout while waiting for correct message with action {exp_action} and payload {exp_payload}")
+    logging.info("This is the message history")
+    charge_point.message_history.log_history()
+    return False
+
+
+async def wait_for_and_validate_next_message_only_with_specific_action(meta_data: TestUtility, charge_point: CP, exp_action: str,
+                                                                       exp_payload, validate_payload_func=None, timeout: int = 30):
+
+    """This method waits for an expected message specified by the message_type, the action and the payload to be received.
+    It also considers the meta_data that contains the message history, the validation mode and forbidden actions.
+    It will only check the first message with the expected action.
+
+    Args:
+        meta_data (TestUtility): contains the message history, the validation mode and forbidden actions that are considered in the validation
+        charge_point (CP): The instance of the wrapper around the chargepoint websocket connection
+        exp_action (str): The expected OCPP action (e.g. StatusNotification, BootNotification, etc.)
+        exp_payload (_type_): The expected payload. Can be of type dict or can also be a call or call_result of the ocpp lib. If a dict is given,
+        only the subset of the entries given in the dict will be validated
+        validate_payload_func (function, optional): Optional validation function that can be used for more complex validations. Defaults to None.
+        timeout (int, optional): time in seconds until waiting for the exp_payload times out. Defaults to 30.
+
+    Returns:
+        _type_: _description_
+    """
+
+    logging.debug(f"Waiting for {exp_action}")
+
+    # check if expected message has been sent already
+    if (meta_data.validation_mode == ValidationMode.EASY and
+        validate_against_old_messages(meta_data,
+                                      exp_action, exp_payload, validate_payload_func)):
+        logging.debug(
+            f"Found correct message {exp_action} with payload {exp_payload} in old messages")
+        logging.debug("OK!")
+        return True
+
+    t_timeout = time.time() + timeout
+    while (time.time() < t_timeout):
+        try:
+            raw_message = await asyncio.wait_for(charge_point.wait_for_message(), timeout=timeout)
+            charge_point.message_event.clear()
+            msg = unpack(raw_message)
+            if (msg.message_type_id == 4):
+                logging.debug("Received CallError")
+            elif (msg.action != None):
+                logging.debug(f"Received Call {msg.action}")
+            elif (msg.message_type_id == 3):
+                logging.debug("Received CallResult")
+
+            meta_data.messages.append(msg)
+
+            response = validate_message(
+                msg, exp_action, exp_payload, validate_payload_func, meta_data)
+            if response != False:
+                logging.debug("Message validated successfully!")
+                meta_data.messages.remove(msg)
+                if response:
+                    return response
+                else:
+                    return True
+            else:
+                if (msg.message_type_id != 4):
+                    logging.debug(
+                        f"This message {msg.action} with payload {msg.payload} was not what I waited for")
+                    logging.debug(f"I wait for {exp_payload}")
+                # add msg to messages and wait for next message
+                meta_data.messages.append(msg)
+                if (msg.message_type_id == 2 and msg.action == exp_action):
+                    return False
         except asyncio.TimeoutError:
             logging.debug("Timeout while waiting for new message")
 
@@ -241,5 +315,3 @@ def create_cert(serial_no, not_before, not_after, ca_cert, csr, ca_private_key):
     cert.sign(ca_private_key, 'SHA256')
 
     return crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
-
-
