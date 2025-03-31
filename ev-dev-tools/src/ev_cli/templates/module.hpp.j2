@@ -42,6 +42,7 @@ public:
         {% if info.enable_telemetry %}
         Everest::TelemetryProvider& telemetry,
         {% endif %}
+        Everest::WatchdogSupervisor& watchdog_supervisor,
         {% for impl in provides %}
         std::unique_ptr<{{ impl.base_class }}> p_{{ impl.id }},
         {% endfor %}
@@ -61,6 +62,7 @@ public:
         {% if info.enable_telemetry %}
         telemetry(telemetry),
         {% endif %}
+        watchdog_supervisor(watchdog_supervisor),
         {% for impl in provides %}
         p_{{ impl.id }}(std::move(p_{{ impl.id }})),
         {% endfor %}
@@ -76,6 +78,7 @@ public:
     {% if info.enable_telemetry %}
     Everest::TelemetryProvider& telemetry;
     {% endif %}
+    Everest::WatchdogSupervisor& watchdog_supervisor;
     {% for impl in provides %}
     const std::unique_ptr<{{ impl.base_class }}> p_{{ impl.id }};
     {% endfor %}
