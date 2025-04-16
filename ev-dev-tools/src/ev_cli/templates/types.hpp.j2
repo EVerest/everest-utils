@@ -9,6 +9,7 @@
 #include <ostream>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include <nlohmann/json.hpp>
@@ -196,6 +197,25 @@ struct {{ parsed_type.name }} {
         }
             {% endif %}
         {% endfor %}
+    }
+
+    /// \brief Compares objects of type {{ parsed_type.name }} for equality
+    bool operator==(const {{ parsed_type.name }}& k) const {
+        {%- for var, tuple in [('this->', 'lhs'), ('k.', 'rhs')] +%}
+        const auto& {{ tuple }}_tuple = std::tie(
+        {%- for property in parsed_type.properties +%}
+            {{ var }}{{ property.name }}
+            {%- if not loop.last %},
+            {%- endif %}
+        {%- endfor +%}
+        );
+        {%- endfor +%}
+        return lhs_tuple == rhs_tuple;
+    }
+
+    /// \brief Compares objects of type {{ parsed_type.name }} for inequality
+    bool operator!=(const {{ parsed_type.name }}& k) const {
+        return not (*this == k);
     }
 
     /// \brief Writes the string representation of the given {{ parsed_type.name }} \p k to the given output stream \p os
