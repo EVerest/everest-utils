@@ -200,8 +200,8 @@ struct {{ parsed_type.name }} {
     }
 
     /// \brief Compares objects of type {{ parsed_type.name }} for equality
-    bool operator==(const {{ parsed_type.name }}& k) const {
-        {%- for var, tuple in [('this->', 'lhs'), ('k.', 'rhs')] +%}
+    friend constexpr bool operator==(const {{ parsed_type.name }}& k, const {{ parsed_type.name }}& l) {
+        {%- for var, tuple in [('k.', 'lhs'), ('l.', 'rhs')] +%}
         const auto& {{ tuple }}_tuple = std::tie(
         {%- for property in parsed_type.properties +%}
             {{ var }}{{ property.name }}
@@ -214,8 +214,8 @@ struct {{ parsed_type.name }} {
     }
 
     /// \brief Compares objects of type {{ parsed_type.name }} for inequality
-    bool operator!=(const {{ parsed_type.name }}& k) const {
-        return not (*this == k);
+    friend constexpr bool operator!=(const {{ parsed_type.name }}& k, const {{ parsed_type.name }}& l) {
+        return not operator==(k, l);
     }
 
     /// \brief Writes the string representation of the given {{ parsed_type.name }} \p k to the given output stream \p os
