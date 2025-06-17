@@ -33,11 +33,13 @@ class OCPPConfigAdjustmentStrategyWrapper(OCPPConfigAdjustmentStrategy):
         config = deepcopy(config)
         return self._callback(config)
 
+
 @dataclass(frozen=True)
 class OCPP201ConfigVariableIdentifier:
     component_name: str
     variable_name: str
     variable_attribute_type: str = "Actual"
+
 
 class GenericOCPP16ConfigAdjustment(OCPPConfigAdjustmentStrategy):
     """ Generic OCPPConfigAdjustmentStrategy for OCPP 1.6 that allows simple variable value adjustments.
@@ -45,6 +47,7 @@ class GenericOCPP16ConfigAdjustment(OCPPConfigAdjustmentStrategy):
     use e.g. via marker
     @pytest.mark.ocpp_config_adaptions(GenericOCPP16ConfigAdjustment([("Custom", "ExampleConfigurationKey", "test_value")]))
     """
+
     def __init__(self, adjustments: list[tuple[str, str, Any]]):
         self._adjustments = adjustments
 
@@ -91,6 +94,7 @@ class GenericOCPP201ConfigAdjustment(OCPPConfigAdjustmentStrategy):
                     if attribute["type"] == identifier.variable_attribute_type:
                         attribute["value"] = value
 
+
 class _OCPP201NetworkConnectionProfileAdjustment(OCPPConfigAdjustmentStrategy):
     """ Adjusts the OCPP 2.0.1 Network Connection Profile by injecting the right host, port and chargepoint id.
 
@@ -98,7 +102,7 @@ class _OCPP201NetworkConnectionProfileAdjustment(OCPPConfigAdjustmentStrategy):
 
     """
 
-    def __init__(self, central_system_port: int | str = None, central_system_host: str = None, security_profile : int = None):
+    def __init__(self, central_system_port: int | str = None, central_system_host: str = None, security_profile: int = None):
         self._central_system_port = central_system_port
         self._central_system_host = central_system_host
         self._security_profile = security_profile
@@ -108,17 +112,91 @@ class _OCPP201NetworkConnectionProfileAdjustment(OCPPConfigAdjustmentStrategy):
         network_connection_profiles = json.loads(GenericOCPP201ConfigAdjustment._get_value_from_v201_config(
             config, OCPP201ConfigVariableIdentifier("InternalCtrlr", "NetworkConnectionProfiles", "Actual")))
         for network_connection_profile in network_connection_profiles:
-            selected_security_profile = network_connection_profile["connectionData"]["securityProfile"] if self._security_profile is None else self._security_profile
-            selected_central_system_port = network_connection_profile["connectionData"]["ocppCsmsUrl"] if self._central_system_port is None else self._central_system_port
-            selected_central_system_host = network_connection_profile["connectionData"]["ocppCsmsUrl"] if self._central_system_host is None else self._central_system_host
+            selected_security_profile = network_connection_profile["connectionData"][
+                "securityProfile"] if self._security_profile is None else self._security_profile
+            selected_central_system_port = network_connection_profile["connectionData"][
+                "ocppCsmsUrl"] if self._central_system_port is None else self._central_system_port
+            selected_central_system_host = network_connection_profile["connectionData"][
+                "ocppCsmsUrl"] if self._central_system_host is None else self._central_system_host
             protocol = "ws" if selected_security_profile == 1 else "wss"
             network_connection_profile["connectionData"][
                 "ocppCsmsUrl"] = f"{protocol}://{selected_central_system_host}:{selected_central_system_port}"
             network_connection_profile["connectionData"][
-                "securityProfile"] = selected_security_profile 
+                "securityProfile"] = selected_security_profile
         GenericOCPP201ConfigAdjustment._set_value_in_v201_config(config, OCPP201ConfigVariableIdentifier("InternalCtrlr", "NetworkConnectionProfiles",
-                                       "Actual"), json.dumps(network_connection_profiles))
+                                                                                                         "Actual"), json.dumps(network_connection_profiles))
         return config
+
+
+class GenericOCPP21ConfigAdjustment(OCPPConfigAdjustmentStrategy):
+    """ Generic OCPPConfigAdjustmentStrategy for OCPP 2.1 that allows simple variable value adjustments.
+
+    use e.g. via marker
+    @pytest.mark.ocpp_config_adaptions(GenericOCPP21ConfigAdjustment([(OCPP201ConfigVariableIdentifier("CustomCntrlr","TestVariableName", "Actual"), "test_value")]))
+
+    """
+
+    def __init__(self, adjustments: list[tuple[OCPP201ConfigVariableIdentifier, Any]]):
+        self._adjustments = adjustments
+
+    def adjust_ocpp_configuration(self, config: dict):
+        config = copy.deepcopy(config)
+        for identifier, value in self._adjustments:
+            self._set_value_in_v21_config(config, identifier, value)
+        return config
+
+    @staticmethod
+    def _get_value_from_v21_config(ocpp_config: dict, identifier: OCPP201ConfigVariableIdentifier):
+        for (component, schema) in ocpp_config.items():
+            if component == identifier.component_name:
+                attributes = schema["properties"][identifier.variable_name]["attributes"]
+                for attribute in attributes:
+                    if attribute["type"] == identifier.variable_attribute_type:
+                        return attribute["value"]
+
+    @staticmethod
+    def _set_value_in_v21_config(ocpp_config: dict, identifier: OCPP201ConfigVariableIdentifier,
+                                 value: Any):
+        for (component, schema) in ocpp_config.items():
+            if component == identifier.component_name:
+                attributes = schema["properties"][identifier.variable_name]["attributes"]
+                for attribute in attributes:
+                    if attribute["type"] == identifier.variable_attribute_type:
+                        attribute["value"] = value
+
+
+class _OCPP21NetworkConnectionProfileAdjustment(OCPPConfigAdjustmentStrategy):
+    """ Adjusts the OCPP 2.1 Network Connection Profile by injecting the right host, port and chargepoint id.
+
+    This is utilized by the `LibOCPP201ConfigurationHelper`.
+
+    """
+
+    def __init__(self, central_system_port: int | str = None, central_system_host: str = None, security_profile: int = None):
+        self._central_system_port = central_system_port
+        self._central_system_host = central_system_host
+        self._security_profile = security_profile
+
+    def adjust_ocpp_configuration(self, config: dict):
+        config = deepcopy(config)
+        network_connection_profiles = json.loads(GenericOCPP21ConfigAdjustment._get_value_from_v21_config(
+            config, OCPP201ConfigVariableIdentifier("InternalCtrlr", "NetworkConnectionProfiles", "Actual")))
+        for network_connection_profile in network_connection_profiles:
+            selected_security_profile = network_connection_profile["connectionData"][
+                "securityProfile"] if self._security_profile is None else self._security_profile
+            selected_central_system_port = network_connection_profile["connectionData"][
+                "ocppCsmsUrl"] if self._central_system_port is None else self._central_system_port
+            selected_central_system_host = network_connection_profile["connectionData"][
+                "ocppCsmsUrl"] if self._central_system_host is None else self._central_system_host
+            protocol = "ws" if selected_security_profile == 1 else "wss"
+            network_connection_profile["connectionData"][
+                "ocppCsmsUrl"] = f"{protocol}://{selected_central_system_host}:{selected_central_system_port}"
+            network_connection_profile["connectionData"][
+                "securityProfile"] = selected_security_profile
+        GenericOCPP21ConfigAdjustment._set_value_in_v21_config(config, OCPP201ConfigVariableIdentifier("InternalCtrlr", "NetworkConnectionProfiles",
+                                                                                                       "Actual"), json.dumps(network_connection_profiles))
+        return config
+
 
 class LibOCPPConfigurationHelperBase(ABC):
     """ Helper for parsing / adapting the LibOCPP configuration and dumping it a database file. """
@@ -174,12 +252,15 @@ class LibOCPP16ConfigurationHelper(LibOCPPConfigurationHelperBase):
         with target_ocpp_config_file.open("w") as f:
             json.dump(config, f)
 
+
 class LibOCPP201ConfigurationHelper(LibOCPPConfigurationHelperBase):
 
     def _get_config(self, source_ocpp_config_path: Path):
         config = {}
-        file_list_standardized = glob(str(source_ocpp_config_path / "standardized" / "*.json"), recursive=False)
-        file_list_custom = glob(str(source_ocpp_config_path / "custom" / "*.json"), recursive=False)
+        file_list_standardized = glob(
+            str(source_ocpp_config_path / "standardized" / "*.json"), recursive=False)
+        file_list_custom = glob(
+            str(source_ocpp_config_path / "custom" / "*.json"), recursive=False)
         file_list = file_list_standardized + file_list_custom
         for file in file_list:
             # Get component from file name
