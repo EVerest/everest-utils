@@ -184,7 +184,7 @@ def generate_tmpl_data_for_module(module, module_def):
 
     module_config = []
     for conf_id, conf_info in module_def.get('config', {}).items():
-        type_info = helpers.build_type_info(conf_id, conf_info['type'])
+        (type_info, enum_info) = helpers.extended_build_type_info(conf_id, conf_info)
         module_config.append(type_info)
 
     tmpl_data = {
@@ -197,7 +197,8 @@ def generate_tmpl_data_for_module(module, module_def):
             'ld_ev_header': 'ld-ev.hpp',
             'enable_external_mqtt': module_def.get('enable_external_mqtt', False),
             'enable_telemetry': module_def.get('enable_telemetry', False),
-            'enable_global_errors': module_def.get('enable_global_errors', False)
+            'enable_global_errors': module_def.get('enable_global_errors', False),
+            'type_headers': sorted(helpers.type_headers)
         },
         'provides': provides,
         'requires': requires,
