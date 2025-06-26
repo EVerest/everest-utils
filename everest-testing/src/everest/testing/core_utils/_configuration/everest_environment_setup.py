@@ -194,8 +194,8 @@ class EverestTestEnvironmentSetup:
                 DeviceModelConfigPath=str(temporary_paths.ocpp_config_path),
                 MessageLogPath=str(temporary_paths.ocpp_message_log_directory),
                 CoreDatabasePath=str(temporary_paths.ocpp_database_dir),
-                DeviceModelDatabasePath=str(
-                    temporary_paths.ocpp_database_dir / "device_model_storage.db"),
+                DeviceModelDatabasePath=str(temporary_paths.ocpp_database_dir / "device_model_storage.db"),
+                EverestDeviceModelDatabasePath=str(temporary_paths.ocpp_database_dir / "everest_device_model_storage.db")
             )
         else:
             raise ValueError(f"unknown  ocpp version {
