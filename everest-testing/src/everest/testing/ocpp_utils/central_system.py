@@ -159,8 +159,7 @@ class LocalCentralSystem(CentralSystem):
         if self.port is None:
             self.port = self.ws_server.sockets[0].getsockname()[1]
             logging.info(f"Server port was not set, setting to {self.port}")
-        logging.debug(f"Server Started listening to new {
-                      self.ocpp_version} connections.")
+        logging.debug(f"Server Started listening to new {self.ocpp_version} connections.")
 
         yield
 

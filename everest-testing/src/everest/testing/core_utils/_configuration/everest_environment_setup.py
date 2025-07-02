@@ -198,8 +198,7 @@ class EverestTestEnvironmentSetup:
                 EverestDeviceModelDatabasePath=str(temporary_paths.ocpp_database_dir / "everest_device_model_storage.db")
             )
         else:
-            raise ValueError(f"unknown  ocpp version {
-                             self._ocpp_config.ocpp_version}")
+            raise ValueError(f"unknown  ocpp version {self._ocpp_config.ocpp_version}")
 
         occp_module_configuration_helper = OCPPModuleConfigurationStrategy(ocpp_paths=ocpp_paths,
                                                                            ocpp_module_id=self._ocpp_config.ocpp_module_id,
@@ -270,8 +269,7 @@ class EverestTestEnvironmentSetup:
 
             ocpp_dir = self._everest_core.prefix_path / "share/everest/modules/OCPP"
         else:
-            raise ValueError(f"Could not determine ChargePointConfigPath for OCPP version {
-                             self._ocpp_config.ocpp_version}")
+            raise ValueError(f"Could not determine ChargePointConfigPath for OCPP version {self._ocpp_config.ocpp_version}")
         ocpp_config_path = ocpp_dir / charge_point_config_path
         return ocpp_config_path
 

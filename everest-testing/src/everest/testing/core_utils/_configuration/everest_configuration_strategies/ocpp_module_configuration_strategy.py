@@ -62,5 +62,4 @@ class OCPPModuleConfigurationStrategy(EverestConfigAdjustmentStrategy):
         assert (ocpp_module == "OCPP" and self._ocpp_version == OCPPVersion.ocpp16) or (
             ocpp_module == "OCPP201" and (self._ocpp_version == OCPPVersion.ocpp201 or
                                           self._ocpp_version == OCPPVersion.ocpp21)), \
-            f"Invalid OCCP Module {ocpp_module} for provided OCCP version {
-                self._ocpp_version}"
+            f"Invalid OCCP Module {ocpp_module} for provided OCCP version {self._ocpp_version}"
