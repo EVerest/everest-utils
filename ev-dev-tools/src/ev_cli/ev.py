@@ -61,7 +61,7 @@ def setup_jinja_env():
     })
 
 
-def generate_tmpl_data_for_if(interface, if_def, type_file):
+def generate_tmpl_data_for_if(interface, if_def, type_file, quantity=1):
     helpers.parsed_enums.clear()
     helpers.parsed_types.clear()
     helpers.type_headers.clear()
@@ -93,7 +93,7 @@ def generate_tmpl_data_for_if(interface, if_def, type_file):
             if enum_info and type_file:
                 enums.append(enum_info)
 
-        cmds.append({'name': cmd, 'args': args, 'result': result_type_info})
+        cmds.append({'name': cmd, 'args': args, 'result': result_type_info, 'quantity': quantity})
 
     if type_file:
         for parsed_enum in helpers.parsed_enums:
@@ -133,9 +133,13 @@ def generate_tmpl_data_for_if(interface, if_def, type_file):
     for value in errors_dict.values():
         errors.extend(value.values())
 
+    base_class_header = f'generated/interfaces/{interface}/Implementation.hpp'
+    if quantity > 1:
+        base_class_header = f'generated/interfaces/{interface}/ImplementationMultiple.hpp'
+
     tmpl_data = {
         'info': {
-            'base_class_header': f'generated/interfaces/{interface}/Implementation.hpp',
+            'base_class_header': base_class_header,
             'interface': interface,
             'desc': if_def['description'],
             'type_headers': sorted(helpers.type_headers)
@@ -158,14 +162,20 @@ def generate_tmpl_data_for_module(module, module_def):
             type_info = helpers.build_type_info(conf_id, conf_info['type'])
             config.append(type_info)
 
+        base_class = f'{impl_info["interface"]}ImplBase'
+        base_class_header = f'generated/interfaces/{impl_info["interface"]}/Implementation.hpp'
+        if impl_info.get('quantity', 1) > 1:
+            base_class_header = f'generated/interfaces/{impl_info["interface"]}/ImplementationMultiple.hpp'
+            base_class = f'{impl_info["interface"]}ImplBaseMultiple'
         provides.append({
             'id': impl,
             'type': impl_info['interface'],
+            'quantity': impl_info.get('quantity', 1),
             'desc': impl_info['description'],
             'config': config,
             'class_name': f'{impl_info["interface"]}Impl',
-            'base_class': f'{impl_info["interface"]}ImplBase',
-            'base_class_header': f'generated/interfaces/{impl_info["interface"]}/Implementation.hpp'
+            'base_class': base_class,
+            'base_class_header': base_class_header
         })
 
     requires = []
@@ -360,16 +370,21 @@ def generate_module_files(rel_mod_dir, update_flag, licenses):
         # load template data for interface
         if_def, last_mtime = load_interface_definition(interface)
 
-        if_tmpl_data = generate_tmpl_data_for_if(interface, if_def, False)
+        if_tmpl_data = generate_tmpl_data_for_if(interface, if_def, False, impl['quantity'])
+
+        impl_base = 'ImplBase'
+        if impl['quantity'] > 1:
+            impl_base = f'{impl_base}Multiple'
 
         if_tmpl_data['info'].update({
             'hpp_guard': helpers.snake_case(f'{impl["id"]}_{interface}').upper() + '_IMPL_HPP',
             'config': impl['config'],
             'class_name': interface + 'Impl',
-            'class_parent': interface + 'ImplBase',
+            'class_parent': interface + impl_base,
             'module_header': f'../{mod}.hpp',
             'module_class': mod,
-            'interface_implementation_id': impl['id']
+            'interface_implementation_id': impl['id'],
+            'multiple': impl['quantity'] > 1
         })
 
         if_tmpl_data['info']['blocks'] = helpers.load_tmpl_blocks(
@@ -495,6 +510,7 @@ def generate_interface_headers(interface, all_interfaces_flag, output_dir):
     # generate Base file (providers view)
     tmpl_data['info']['hpp_guard'] = helpers.snake_case(interface).upper() + '_IMPLEMENTATION_HPP'
     tmpl_data['info']['class_name'] = f'{interface}ImplBase'
+    tmpl_data['info']['multiple'] = False
 
     base_file = output_path / 'Implementation.hpp'
 
@@ -505,6 +521,23 @@ def generate_interface_headers(interface, all_interfaces_flag, output_dir):
         'last_mtime': last_mtime,
         'printable_name': base_file.relative_to(output_path.parent)
     }
+
+    # generate Base-multiple file (providers view)
+    tmpl_data['info']['hpp_guard'] = helpers.snake_case(interface).upper() + '_IMPLEMENTATION_MULTIPLE_HPP'
+    tmpl_data['info']['class_name'] = f'{interface}ImplBaseMultiple'
+    tmpl_data['info']['multiple'] = True
+
+    base_multiple_file = output_path / 'ImplementationMultiple.hpp'
+
+    if_parts['base_multiple'] = {
+        'path': base_multiple_file,
+        'content': templates['interface_base'].render(tmpl_data),
+        'template_path': Path(templates['interface_base'].filename),
+        'last_mtime': last_mtime,
+        'printable_name': base_multiple_file.relative_to(output_path.parent)
+    }
+
+    del tmpl_data['info']['multiple']
 
     # generate Exports file (users view)
     tmpl_data['info']['hpp_guard'] = helpers.snake_case(interface).upper() + '_INTERFACE_HPP'
@@ -651,10 +684,12 @@ def interface_genhdr(args):
         if not args.disable_clang_format:
             # FIXME (aw): this broken, because in case all_interfaces is true, if_parts might be none for invalid interface files
             helpers.clang_format(args.clang_format_file, if_parts['base'])
+            helpers.clang_format(args.clang_format_file, if_parts['base_multiple'])
             helpers.clang_format(args.clang_format_file, if_parts['exports'])
             helpers.clang_format(args.clang_format_file, if_parts['types'])
 
         helpers.write_content_to_file_and_check_template(if_parts['base'], primary_update_strategy, args.diff)
+        helpers.write_content_to_file_and_check_template(if_parts['base_multiple'], primary_update_strategy, args.diff)
         helpers.write_content_to_file_and_check_template(if_parts['exports'], primary_update_strategy, args.diff)
         helpers.write_content_to_file_and_check_template(if_parts['types'], primary_update_strategy, args.diff)
 

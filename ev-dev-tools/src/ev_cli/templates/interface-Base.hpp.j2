@@ -49,6 +49,9 @@ public:
     // publish functions for variables
     {% for var in vars %}
     void publish_{{ var.name }}(
+    {%- if info.multiple -%}
+        std::size_t _index, 
+    {%- endif -%}
     {% if 'array_type' in var %}
         const std::vector<{{ var.array_type }}>&
     {%- elif 'object_type' in var %}
@@ -62,10 +65,10 @@ public:
     {% if 'object_type' in var %}
         json json_value = value;
         Object object_value = json_value;
-        _ev->publish(_name, "{{ var.name }}", object_value);
+        _ev->publish({{ '_index' if info.multiple else '0'}}, _name, "{{ var.name }}", object_value);
     {% elif 'enum_type' in var %}
         auto value_string = {{ enum_to_string(var.enum_type) }}(value);
-        _ev->publish(_name, "{{ var.name }}", value_string);
+        _ev->publish({{ '_index' if info.multiple else '0'}}, _name, "{{ var.name }}", value_string);
     {% elif 'array_type' in var %}
         {% if 'array_type_contains_enum' in var %}
         std::vector<std::string> string_array;
@@ -73,12 +76,12 @@ public:
         for (const auto& entry : value) {
             string_array.push_back({{ enum_to_string(var.array_type) }}(entry));
         }
-        _ev->publish(_name, "{{ var.name }}", string_array);
+        _ev->publish({{ '_index' if info.multiple else '0'}}, _name, "{{ var.name }}", string_array);
         {% else %}
-        _ev->publish(_name, "{{ var.name }}", value);
+        _ev->publish({{ '_index' if info.multiple else '0'}}, _name, "{{ var.name }}", value);
         {% endif %}
     {% else %}
-        _ev->publish(_name, "{{ var.name }}", value);
+        _ev->publish({{ '_index' if info.multiple else '0'}}, _name, "{{ var.name }}", value);
     {% endif %}
     }
     {% endfor %}
@@ -117,7 +120,7 @@ protected:
     {% else %}
     // command handler functions (virtual)
     {% for cmd in cmds %}
-    {{ handle_cmd_signature(cmd, none, info.interface_name) }} = 0;
+    {{ handle_cmd_signature(cmd, none, info.interface_name, info.multiple) }} = 0;
     {% endfor %}
     {% endif %}
 
@@ -146,7 +149,7 @@ private:
             {% endfor %}
         };
         {% endif %}
-        {{ cmd.name }}_cmd.cmd = [this](Parameters args) -> Result {
+        {{ cmd.name }}_cmd.cmd = [this](std::size_t{{ ' index' if info.multiple}}, Parameters args) -> Result {
         {% for arg in cmd.args %}
             {% if 'object_type' in arg %}
             {{ arg.object_type }} {{ arg.name }} = args["{{ arg.name }}"];
@@ -169,7 +172,7 @@ private:
             (void) args; // no arguments used for this callback
         {% endfor %}
 
-            {{ 'auto result = ' if cmd.result }}this->handle_{{ cmd.name }}(
+            {{ 'auto result = ' if cmd.result }}this->handle_{{ cmd.name }}({{ 'index,' if info.multiple}}
                 {%- for arg in cmd.args -%}
                 {{ arg.name }}{{ ', ' if not loop.last }}
                 {%- endfor -%}

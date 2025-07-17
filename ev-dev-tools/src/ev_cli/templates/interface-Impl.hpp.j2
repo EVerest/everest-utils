@@ -37,7 +37,7 @@ protected:
     {% else %}
     // command handler functions (virtual)
     {% for cmd in cmds %}
-    {{ handle_cmd_signature(cmd, none, '::'+info.interface) }} override;
+    {{ handle_cmd_signature(cmd, none, '::'+info.interface, cmd.quantity > 1) }} override;
     {% endfor %}
     {% endif %}
 
