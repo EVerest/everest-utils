@@ -22,7 +22,9 @@ public:
         _name(name) {
         if (ev == nullptr) {
             EVLOG_error << "ev is nullptr, please check the initialization of the module";
+            {% if not info.multiple %}
             error_factory = nullptr;
+            {% endif %}
             EVLOG_error << "error_manager, error_state_monitor are empty and error_factory is nullptr";
         } else {
             error_manager = ev->get_error_manager_impl(name);
@@ -34,16 +36,20 @@ public:
             if (error_state_monitor.empty()) {
                 EVLOG_error << "error_state_monitor is empty";
             }
+            error_factory = ev->get_error_factory(name);
+            if (error_factory.empty()) {
+                EVLOG_error << "error_factory is empty";
+            }
             {% else %}
             error_state_monitor = ev->get_error_state_monitor_impl(name).at(0);
             if (error_state_monitor == nullptr) {
                 EVLOG_error << "error_state_monitor is nullptr";
             }
-            {% endif %}
-            error_factory = ev->get_error_factory(name);
+            error_factory = ev->get_error_factory(name).at(0);
             if (error_factory == nullptr) {
                 EVLOG_error << "error_factory is nullptr";
             }
+            {% endif %}
             impl_mapping = Everest::get_impl_mapping(ev->get_mapping(), name);
         }
     }
@@ -114,10 +120,11 @@ public:
 
     {% if info.multiple %}
     std::vector<std::shared_ptr<Everest::error::ErrorStateMonitor>> error_state_monitor;
+    std::vector<std::shared_ptr<Everest::error::ErrorFactory>> error_factory;
     {% else %}
     std::shared_ptr<Everest::error::ErrorStateMonitor> error_state_monitor;
-    {% endif %}
     std::shared_ptr<Everest::error::ErrorFactory> error_factory;
+    {% endif %}
 
     std::optional<Mapping> get_mapping() {
         return impl_mapping;
