@@ -22,23 +22,34 @@ public:
         _name(name) {
         if (ev == nullptr) {
             EVLOG_error << "ev is nullptr, please check the initialization of the module";
-            error_manager = nullptr;
-            error_state_monitor = nullptr;
+            {% if not info.multiple %}
             error_factory = nullptr;
-            EVLOG_error << "error_manager, error_state_monitor and error_factory are nullptr";
+            {% endif %}
+            EVLOG_error << "error_manager, error_state_monitor are empty and error_factory is nullptr";
         } else {
             error_manager = ev->get_error_manager_impl(name);
-            if (error_manager == nullptr) {
-                EVLOG_error << "error_manager is nullptr";
+            if (error_manager.empty()) {
+                EVLOG_error << "error_manager is empty";
             }
+            {% if info.multiple %}
             error_state_monitor = ev->get_error_state_monitor_impl(name);
+            if (error_state_monitor.empty()) {
+                EVLOG_error << "error_state_monitor is empty";
+            }
+            error_factory = ev->get_error_factory(name);
+            if (error_factory.empty()) {
+                EVLOG_error << "error_factory is empty";
+            }
+            {% else %}
+            error_state_monitor = ev->get_error_state_monitor_impl(name).at(0);
             if (error_state_monitor == nullptr) {
                 EVLOG_error << "error_state_monitor is nullptr";
             }
-            error_factory = ev->get_error_factory(name);
+            error_factory = ev->get_error_factory(name).at(0);
             if (error_factory == nullptr) {
                 EVLOG_error << "error_factory is nullptr";
             }
+            {% endif %}
             impl_mapping = Everest::get_impl_mapping(ev->get_mapping(), name);
         }
     }
@@ -49,6 +60,9 @@ public:
     // publish functions for variables
     {% for var in vars %}
     void publish_{{ var.name }}(
+    {%- if info.multiple -%}
+        std::size_t _index, 
+    {%- endif -%}
     {% if 'array_type' in var %}
         const std::vector<{{ var.array_type }}>&
     {%- elif 'object_type' in var %}
@@ -62,10 +76,10 @@ public:
     {% if 'object_type' in var %}
         json json_value = value;
         Object object_value = json_value;
-        _ev->publish(_name, "{{ var.name }}", object_value);
+        _ev->publish({{ '_index' if info.multiple else '0'}}, _name, "{{ var.name }}", object_value);
     {% elif 'enum_type' in var %}
         auto value_string = {{ enum_to_string(var.enum_type) }}(value);
-        _ev->publish(_name, "{{ var.name }}", value_string);
+        _ev->publish({{ '_index' if info.multiple else '0'}}, _name, "{{ var.name }}", value_string);
     {% elif 'array_type' in var %}
         {% if 'array_type_contains_enum' in var %}
         std::vector<std::string> string_array;
@@ -73,39 +87,44 @@ public:
         for (const auto& entry : value) {
             string_array.push_back({{ enum_to_string(var.array_type) }}(entry));
         }
-        _ev->publish(_name, "{{ var.name }}", string_array);
+        _ev->publish({{ '_index' if info.multiple else '0'}}, _name, "{{ var.name }}", string_array);
         {% else %}
-        _ev->publish(_name, "{{ var.name }}", value);
+        _ev->publish({{ '_index' if info.multiple else '0'}}, _name, "{{ var.name }}", value);
         {% endif %}
     {% else %}
-        _ev->publish(_name, "{{ var.name }}", value);
+        _ev->publish({{ '_index' if info.multiple else '0'}}, _name, "{{ var.name }}", value);
     {% endif %}
     }
     {% endfor %}
     {% endif %}
 
-    void raise_error(const Everest::error::Error& error) {
-        error_manager->raise_error(error);
+    void raise_error({{ 'std::size_t _index, ' if info.multiple}}const Everest::error::Error& error) {
+        error_manager.at({{ '_index' if info.multiple else '0'}})->raise_error(error);
     }
     
-    void clear_error(const Everest::error::ErrorType& type) {
-        error_manager->clear_error(type);
+    void clear_error({{ 'std::size_t _index, ' if info.multiple}}const Everest::error::ErrorType& type) {
+        error_manager.at({{ '_index' if info.multiple else '0'}})->clear_error(type);
     }
 
-    void clear_error(const Everest::error::ErrorType& type, const Everest::error::ErrorSubType& sub_type) {
-        error_manager->clear_error(type, sub_type);
+    void clear_error({{ 'std::size_t _index, ' if info.multiple}}const Everest::error::ErrorType& type, const Everest::error::ErrorSubType& sub_type) {
+        error_manager.at({{ '_index' if info.multiple else '0'}})->clear_error(type, sub_type);
     }
 
-    void clear_all_errors_of_impl() {
-        error_manager->clear_all_errors();
+    void clear_all_errors_of_impl({{ 'std::size_t _index' if info.multiple}}) {
+        error_manager.at({{ '_index' if info.multiple else '0'}})->clear_all_errors();
     }
 
-    void clear_all_errors_of_impl(const Everest::error::ErrorType& type) {
-        error_manager->clear_all_errors(type);
+    void clear_all_errors_of_impl({{ 'std::size_t _index, ' if info.multiple}}const Everest::error::ErrorType& type) {
+        error_manager.at({{ '_index' if info.multiple else '0'}})->clear_all_errors(type);
     }
 
+    {% if info.multiple %}
+    std::vector<std::shared_ptr<Everest::error::ErrorStateMonitor>> error_state_monitor;
+    std::vector<std::shared_ptr<Everest::error::ErrorFactory>> error_factory;
+    {% else %}
     std::shared_ptr<Everest::error::ErrorStateMonitor> error_state_monitor;
     std::shared_ptr<Everest::error::ErrorFactory> error_factory;
+    {% endif %}
 
     std::optional<Mapping> get_mapping() {
         return impl_mapping;
@@ -117,14 +136,14 @@ protected:
     {% else %}
     // command handler functions (virtual)
     {% for cmd in cmds %}
-    {{ handle_cmd_signature(cmd, none, info.interface_name) }} = 0;
+    {{ handle_cmd_signature(cmd, none, info.interface_name, info.multiple) }} = 0;
     {% endfor %}
     {% endif %}
 
 private:
     Everest::ModuleAdapter* const _ev;
     const std::string _name;
-    std::shared_ptr<Everest::error::ErrorManagerImpl> error_manager;
+    std::vector<std::shared_ptr<Everest::error::ErrorManagerImpl>> error_manager;
     std::optional<Mapping> impl_mapping;
 
     // helper function for getting all commands
@@ -146,7 +165,7 @@ private:
             {% endfor %}
         };
         {% endif %}
-        {{ cmd.name }}_cmd.cmd = [this](Parameters args) -> Result {
+        {{ cmd.name }}_cmd.cmd = [this](std::size_t{{ ' index' if info.multiple}}, Parameters args) -> Result {
         {% for arg in cmd.args %}
             {% if 'object_type' in arg %}
             {{ arg.object_type }} {{ arg.name }} = args["{{ arg.name }}"];
@@ -169,7 +188,7 @@ private:
             (void) args; // no arguments used for this callback
         {% endfor %}
 
-            {{ 'auto result = ' if cmd.result }}this->handle_{{ cmd.name }}(
+            {{ 'auto result = ' if cmd.result }}this->handle_{{ cmd.name }}({{ 'index,' if info.multiple}}
                 {%- for arg in cmd.args -%}
                 {{ arg.name }}{{ ', ' if not loop.last }}
                 {%- endfor -%}
