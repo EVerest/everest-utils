@@ -27,6 +27,8 @@ def main():
                         help='Working directory containing the EVerest workspace (default: .)', default=str(Path.cwd()))
     parser.add_argument('--temp-dir', '-td', type=str,
                         help='Temporary directory for creating the snapshot in (default: working-dir/tmp-for-snapshot)', default=None)
+    parser.add_argument('--version', type=str,
+                        help='dependency version to override, format is: dependency1:version,dependency2:version2', default=None)
 
     args = parser.parse_args()
 
@@ -69,6 +71,24 @@ def main():
                           stderr=subprocess.PIPE, cwd=tmp_dir) as edm:
         for line in edm.stderr:
             print(line.decode('utf-8'), end='')
+    if args.version:
+        versions = args.version.split(',')
+        in_snapshot = tmp_dir / 'snapshot.yaml'
+        snapshot = None
+        with open(in_snapshot, mode='r', encoding='utf-8') as snapshot_file:
+            try:
+                snapshot = yaml.safe_load(snapshot_file)
+            except yaml.YAMLError as e:
+                print(f'Error parsing yaml of {in_snapshot}: {e}')
+        if snapshot:
+            for dep_versions in versions:
+                dependency, version = dep_versions.split(':')
+                if dependency in snapshot:
+                    print(f'Overriding {dependency} version {snapshot[dependency]['git_tag']} to {version}')
+                    snapshot[dependency]['git_tag'] = version
+            with open(in_snapshot, mode='w', encoding='utf-8') as snapshot_file:
+                yaml.safe_dump(snapshot, snapshot_file, indent=2, sort_keys=False, width=120)
+    print('Done')
 
 if __name__ == '__main__':
     main()
