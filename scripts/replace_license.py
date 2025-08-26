@@ -66,5 +66,15 @@ def main():
     else:
         print('Everything went well')
 
+    manifest_files = [file for file in working_dir.rglob('*') if file.name == 'manifest.yaml']
+    for file in manifest_files:
+        manifest = file.read_text()
+        needle = 'license:'
+        start = manifest.find(needle)
+        end = manifest.find('\n', start+len(needle))
+        new_manifest = manifest[:start] + 'license: https://opensource.org/licenses/Apache-2.0' + manifest[end:]
+        file.write_text(new_manifest)
+
+
 if __name__ == '__main__':
     main()
