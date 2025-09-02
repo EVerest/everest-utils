@@ -17,6 +17,7 @@ import yaml
 import subprocess
 from pathlib import Path
 import shutil
+import string
 
 
 def main():
@@ -29,6 +30,7 @@ def main():
                         help='Temporary directory for creating the snapshot in (default: working-dir/tmp-for-snapshot)', default=None)
     parser.add_argument('--version', type=str,
                         help='dependency version to override, format is: dependency1:version,dependency2:version2', default=None)
+    parser.add_argument('--git-version', action='store_true', help='Use "git" as version when encountering a git hash')
 
     args = parser.parse_args()
 
@@ -71,24 +73,30 @@ def main():
                           stderr=subprocess.PIPE, cwd=tmp_dir) as edm:
         for line in edm.stderr:
             print(line.decode('utf-8'), end='')
-    if args.version:
-        versions = args.version.split(',')
-        in_snapshot = tmp_dir / 'snapshot.yaml'
-        snapshot = None
-        with open(in_snapshot, mode='r', encoding='utf-8') as snapshot_file:
-            try:
-                snapshot = yaml.safe_load(snapshot_file)
-            except yaml.YAMLError as e:
-                print(f'Error parsing yaml of {in_snapshot}: {e}')
-        if snapshot:
+    in_snapshot = tmp_dir / 'snapshot.yaml'
+    snapshot = None
+    with open(in_snapshot, mode='r', encoding='utf-8') as snapshot_file:
+        try:
+            snapshot = yaml.safe_load(snapshot_file)
+        except yaml.YAMLError as e:
+            print(f'Error parsing yaml of {in_snapshot}: {e}')
+    if snapshot:
+        # check if git_tag is a 40 character hex string and assume it is a git_rev
+        if args.git_version:
+            for dependency, entry in snapshot.items():
+                if len(entry['git_tag']) == 40 and all(character in string.hexdigits for character in entry['git_tag']):
+                    snapshot[dependency]['git_tag'] = 'git'
+        if args.version:
+            versions = args.version.split(',')
             for dep_versions in versions:
                 dependency, version = dep_versions.split(':')
                 if dependency in snapshot:
                     print(f'Overriding {dependency} version {snapshot[dependency]['git_tag']} to {version}')
                     snapshot[dependency]['git_tag'] = version
-            with open(in_snapshot, mode='w', encoding='utf-8') as snapshot_file:
-                yaml.safe_dump(snapshot, snapshot_file, indent=2, sort_keys=False, width=120)
+        with open(in_snapshot, mode='w', encoding='utf-8') as snapshot_file:
+            yaml.safe_dump(snapshot, snapshot_file, indent=2, sort_keys=False, width=120)
     print('Done')
+
 
 if __name__ == '__main__':
     main()
