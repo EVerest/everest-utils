@@ -10,9 +10,6 @@ Use edm to create a snapshot of the current directory without polluting the curr
 """
 
 import argparse
-import json
-import os
-import re
 import yaml
 import subprocess
 from pathlib import Path

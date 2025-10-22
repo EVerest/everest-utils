@@ -9,7 +9,6 @@ author: kai-uwe.hermann@pionix.de
 Parse snapshot.yaml files and modify corresponding .bb recipes
 """
 import argparse
-import json
 import os
 import re
 import yaml

@@ -9,11 +9,9 @@ author: kai-uwe.hermann@pionix.de
 Parse snapshot.yaml files check if dependency versions are up2date by checking for newer git tags
 """
 import argparse
-import json
 import os
 import re
 import yaml
-from pathlib import Path
 import subprocess
 from packaging.version import Version
 
