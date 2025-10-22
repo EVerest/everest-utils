@@ -20,6 +20,19 @@ import shutil
 import string
 
 
+def get_tags(path: Path) -> list:
+        """Return a list of tags the HEAD points to of the repo at path, or an empty list."""
+        tags = []
+        try:
+            result = subprocess.run(["git", "-C", path, "tag", "--points-at", "HEAD"],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+            tags = result.stdout.decode("utf-8").splitlines()
+        except subprocess.CalledProcessError:
+            return tag
+
+        return tags
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='create an isolated snapshot with edm')
@@ -32,6 +45,7 @@ def main():
                         help='dependency version to override, format is: dependency1:version,dependency2:version2', default=None)
     parser.add_argument('--git-version', action='store_true', help='Use "git" as version when encountering a git hash')
     parser.add_argument('--allow-relative-to-working-dir', action='store_true', help='Allow temporary directory to be relative to working dir (dangerous!)')
+    parser.add_argument('--post-process', action='store_true', help='Postprocess existing snapshot')
 
     args = parser.parse_args()
 
@@ -50,30 +64,31 @@ def main():
         print(f'Temporary directory cannot be relative to working directory: {tmp_dir}')
         return 1
 
-    if tmp_dir.exists():
+    if not args.post_process and tmp_dir.exists():
         print(f'Temporary directory dir already exists, deleting it: {tmp_dir}')
         shutil.rmtree(tmp_dir, ignore_errors=True)
-    tmp_dir.mkdir()
+    if not args.post_process:
+        tmp_dir.mkdir()
 
-    subdirs = list(working_dir.glob('*/'))
-    for subdir in subdirs:
-        subdir_path = Path(subdir)
-        if not subdir_path.is_dir():
-            print(f'{subdir_path} is not a dir, ignoring')
-            continue
-        if subdir_path == tmp_dir:
-            print(f'{subdir_path} is tmp dir, ignoring')
-            continue
-        print(f'Copying {subdir_path} to {tmp_dir}')
-        destdir = tmp_dir / subdir_path.name
+        subdirs = list(working_dir.glob('*/'))
+        for subdir in subdirs:
+            subdir_path = Path(subdir)
+            if not subdir_path.is_dir():
+                print(f'{subdir_path} is not a dir, ignoring')
+                continue
+            if subdir_path == tmp_dir:
+                print(f'{subdir_path} is tmp dir, ignoring')
+                continue
+            print(f'Copying {subdir_path} to {tmp_dir}')
+            destdir = tmp_dir / subdir_path.name
 
-        shutil.copytree(subdir_path, destdir, ignore=shutil.ignore_patterns('build*'))
+            shutil.copytree(subdir_path, destdir, ignore=shutil.ignore_patterns('build*'))
 
-    print('Running edm snaphot --recursive')
-    with subprocess.Popen(['edm', 'snapshot', '--recursive'],
-                          stderr=subprocess.PIPE, cwd=tmp_dir) as edm:
-        for line in edm.stderr:
-            print(line.decode('utf-8'), end='')
+        print('Running edm snaphot --recursive')
+        with subprocess.Popen(['edm', '--external-in-config', 'snapshot', '--recursive'],
+                            stderr=subprocess.PIPE, cwd=tmp_dir) as edm:
+            for line in edm.stderr:
+                print(line.decode('utf-8'), end='')
     in_snapshot = tmp_dir / 'snapshot.yaml'
     snapshot = None
     with open(in_snapshot, mode='r', encoding='utf-8') as snapshot_file:
@@ -94,6 +109,18 @@ def main():
                 if dependency in snapshot:
                     print(f'Overriding {dependency} version {snapshot[dependency]['git_tag']} to {version}')
                     snapshot[dependency]['git_tag'] = version
+        for dependency, entry in snapshot.items():
+            if entry['git_tag'] == 'latest':
+                print(f'{dependency} has tag "latest", check if there is a version tag as well')
+                dependency_path = tmp_dir / dependency
+                tags = get_tags(dependency_path)
+                tags.remove('latest')
+                if len(tags) == 1:
+                    print('  Fixing "latest" tag in snapshot')
+                    snapshot[dependency]['git_tag'] = tags[0]
+                else:
+                    print(f'  List of tags with "latest" removed: "{tags}" is not directly usable...')
+
         with open(in_snapshot, mode='w', encoding='utf-8') as snapshot_file:
             yaml.safe_dump(snapshot, snapshot_file, indent=2, sort_keys=False, width=120)
     print('Done')
