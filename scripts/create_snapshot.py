@@ -31,6 +31,7 @@ def main():
     parser.add_argument('--version', type=str,
                         help='dependency version to override, format is: dependency1:version,dependency2:version2', default=None)
     parser.add_argument('--git-version', action='store_true', help='Use "git" as version when encountering a git hash')
+    parser.add_argument('--allow-relative-to-working-dir', action='store_true', help='Allow temporary directory to be relative to working dir (dangerous!)')
 
     args = parser.parse_args()
 
@@ -45,7 +46,7 @@ def main():
         print(f'Temporary directory cannot be equal to working directory: {tmp_dir}')
         return 1
 
-    if tmp_dir.is_relative_to(working_dir) and tmp_dir.parent != working_dir:
+    if tmp_dir.is_relative_to(working_dir) and tmp_dir.parent != working_dir and not args.allow_relative_to_working_dir:
         print(f'Temporary directory cannot be relative to working directory: {tmp_dir}')
         return 1
 
