@@ -58,6 +58,7 @@ def main():
                'everest-utils': 'everest-devtools/evcli',
                'everest-core': 'everest/everest-core',
                'everest-framework': 'everest/everest-framework',
+               'everest-sqlite': 'everest/everest-sqlite',
                'libcbv2g': 'everest/libcbv2g',
                'libevse-security': 'everest/libevse-security',
                'libfsm': 'everest/libfsm',
