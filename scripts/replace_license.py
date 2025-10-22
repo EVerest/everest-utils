@@ -16,7 +16,7 @@ from pathlib import Path
 
 def main():
     parser = argparse.ArgumentParser(
-        description='create an isolated snapshot with edm')
+        description='replaces licenses with Apache 2.0')
 
     parser.add_argument('--working-dir', '-wd', type=str,
                         help='Working directory (default: .)', default=str(Path.cwd()))
