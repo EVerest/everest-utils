@@ -46,6 +46,7 @@ def main():
     parser.add_argument('--git-version', action='store_true', help='Use "git" as version when encountering a git hash')
     parser.add_argument('--allow-relative-to-working-dir', action='store_true', help='Allow temporary directory to be relative to working dir (dangerous!)')
     parser.add_argument('--post-process', action='store_true', help='Postprocess existing snapshot')
+    parser.add_argument('--include-external-deps', action='store_true', help='Include external dependencies in snapshot')
 
     args = parser.parse_args()
 
@@ -85,8 +86,11 @@ def main():
             shutil.copytree(subdir_path, destdir, ignore=shutil.ignore_patterns('build*'))
 
         print('Running edm snaphot --recursive')
-        with subprocess.Popen(['edm', '--external-in-config', 'snapshot', '--recursive'],
-                            stderr=subprocess.PIPE, cwd=tmp_dir) as edm:
+        cmd_line = ['edm']
+        if args.include_external_deps:
+            cmd_line.append('--external-in-config')
+        cmd_line.extend(['snapshot', '--recursive'])
+        with subprocess.Popen(cmd_line, stderr=subprocess.PIPE, cwd=tmp_dir) as edm:
             for line in edm.stderr:
                 print(line.decode('utf-8'), end='')
     in_snapshot = tmp_dir / 'snapshot.yaml'
