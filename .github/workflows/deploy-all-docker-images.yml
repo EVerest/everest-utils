@@ -30,7 +30,7 @@ jobs:
         with:
           path: source
       - name: Run version consistency check
-        run: ./.ci/build-kit/scripts/check_version_consistency.py --input .
+        run: ./.ci/scripts/check_version_consistency.py --input .
   build-and-push-all-images:
     name: Build and push all docker images
     strategy:
