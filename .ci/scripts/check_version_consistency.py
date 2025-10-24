@@ -13,7 +13,6 @@ Check if versions in ev-dev-tools, everest-testing and CMake are consistent
 
 
 import argparse
-import json
 import re
 import sys
 
