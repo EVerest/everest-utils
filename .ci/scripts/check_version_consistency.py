@@ -114,7 +114,6 @@ def main() -> int:
 
     ev_cli_python_version = get_python_package_version(ev_cli_init_py_path)
     print(f'ev-cli version: {ev_cli_python_version}')
-    
     everest_testing_python_version = get_python_package_version(everest_testing_init_py_path)
     print(f'everest-testing version: {everest_testing_python_version}')
 
