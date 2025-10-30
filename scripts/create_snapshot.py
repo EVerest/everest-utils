@@ -101,7 +101,12 @@ def main():
         # check if git_tag is a 40 character hex string and assume it is a git_rev
         if args.git_version:
             for dependency, entry in snapshot.items():
-                if len(entry['git_tag']) == 40 and all(character in string.hexdigits for character in entry['git_tag']):
+                git_tag = ''
+                if 'git_tag' in entry:
+                    git_tag = entry['git_tag']
+                elif 'git_rev' in entry:
+                    git_tag = entry['git_rev']
+                if len(git_tag) == 40 and all(character in string.hexdigits for character in git_tag):
                     snapshot[dependency]['git_tag'] = 'git'
         if args.version:
             versions = args.version.split(',')
@@ -111,7 +116,10 @@ def main():
                     print(f'Overriding {dependency} version {snapshot[dependency]['git_tag']} to {version}')
                     snapshot[dependency]['git_tag'] = version
         for dependency, entry in snapshot.items():
-            if entry['git_tag'] == 'latest':
+            git_tag = ''
+            if 'git_tag' in entry:
+                git_tag = entry['git_tag']
+            if git_tag == 'latest':
                 print(f'{dependency} has tag "latest", check if there is a version tag as well')
                 dependency_path = tmp_dir / dependency
                 tags = get_tags(dependency_path)
