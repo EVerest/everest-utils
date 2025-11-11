@@ -56,7 +56,6 @@ def setup_jinja_env():
         'ld-ev.hpp': env.get_template('ld-ev.hpp.j2'),
         'ld-ev.cpp': env.get_template('ld-ev.cpp.j2'),
         'cmakelists': env.get_template('CMakeLists.txt.j2'),
-        'doc.rst': env.get_template('doc.rst.j2'),
         'index.rst': env.get_template('index.rst.j2'),
     })
 
@@ -430,15 +429,6 @@ def generate_module_files(rel_mod_dir, update_flag, licenses):
         'template_path': Path(templates['module.cpp'].filename),
         'last_mtime': mod_path.stat().st_mtime,
         'license_header': license_header
-    })
-
-    # doc.rst
-    mod_files['docs'].append({
-        'abbr': 'doc.rst',
-        'path': output_path / 'doc.rst',
-        'content': templates['doc.rst'].render(tmpl_data),
-        'template_path': Path(templates['doc.rst'].filename),
-        'last_mtime': mod_path.stat().st_mtime
     })
 
     # docs/index.rst

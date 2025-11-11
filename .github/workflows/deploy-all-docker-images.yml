@@ -12,11 +12,25 @@ on:
       - '**'
     tags:
       - 'v*'
+  pull_request: {}
 
 env:
   REGISTRY: ghcr.io
 
 jobs:
+  lint-versions:
+    name: Ensure versions are consistent
+    runs-on: 'ubuntu-22.04'
+    defaults:
+      run:
+        working-directory: ./source
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          path: source
+      - name: Run version consistency check
+        run: ./.ci/scripts/check_version_consistency.py --input .
   build-and-push-all-images:
     name: Build and push all docker images
     strategy:
