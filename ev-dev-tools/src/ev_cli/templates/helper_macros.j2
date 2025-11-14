@@ -50,10 +50,13 @@ static_cast<{{ arg.cpp_type }}>
 )
 {%- endmacro %}
 
-{% macro handle_cmd_signature(cmd, class_name=None, interface=none) -%}
+{% macro handle_cmd_signature(cmd, class_name=None, interface=none, multiple=false) -%}
 {% if not class_name %}virtual {% endif -%}
 {{ result_type(cmd.result, interface) }} {% if class_name %}{{ class_name }}::{% endif -%}
 handle_{{ cmd.name }}(
+{%- if multiple -%}
+std::size_t index, 
+{%- endif -%}
 {%- for arg in cmd.args -%}
 {{ cpp_type(arg) }}& {{ arg.name }}{{ ', ' if not loop.last }}
 {%- endfor -%}
